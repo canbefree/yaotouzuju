@@ -20,30 +20,15 @@
 }
 
 .home-hero {
-  padding-top: 200px;
+  padding-top: 150px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.home-logo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.home-logo-text {
-  font-size: 96px;
-  font-weight: 900;
-  color: #fff;
-  letter-spacing: 6px;
-  text-shadow: 0 6px 0 #c0791f, 0 12px 20px rgba(0, 0, 0, 0.35);
-}
-
-.home-dice-row {
-  display: flex;
-  gap: 16px;
-  margin-top: 16px;
+.home-logo-img {
+  width: 640px;
+  filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.3));
 }
 
 .home-slogan {

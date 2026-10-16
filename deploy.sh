@@ -15,14 +15,23 @@ cd "$ROOT/server"
 ./build.sh
 
 echo "==> 准备远端目录"
-ssh "$HOST" 'mkdir -p /opt/yaotou/public /opt/yaotou/data'
+ssh "$HOST" 'sudo mkdir -p /opt/yaotou/public /opt/yaotou/data && sudo chown -R ubuntu:ubuntu /opt/yaotou'
 
-echo "==> 上传二进制与静态资源"
-scp "$ROOT/server/dist/yaotoud-linux-amd64" "$HOST:/opt/yaotou/yaotoud"
-ssh "$HOST" 'rm -rf /opt/yaotou/public/*'
+# 二进制先传到临时名，避免「正在运行的二进制不可覆盖」
+echo "==> 上传二进制（临时名）"
+scp "$ROOT/server/dist/yaotoud-linux-amd64" "$HOST:/opt/yaotou/yaotoud.new"
+
+echo "==> 上传静态资源"
+ssh "$HOST" 'rm -rf /opt/yaotou/public && mkdir -p /opt/yaotou/public'
 scp -r "$ROOT/app/dist/"* "$HOST:/opt/yaotou/public/"
 
-echo "==> 重启服务"
-ssh "$HOST" 'sudo systemctl restart yaotou && sleep 1 && systemctl is-active yaotou && curl -s http://127.0.0.1:8090/api/health | head -c 120; echo'
+echo "==> 停止服务、替换二进制、启动"
+ssh "$HOST" 'sudo systemctl stop yaotou 2>/dev/null || true
+  mv -f /opt/yaotou/yaotoud.new /opt/yaotou/yaotoud
+  chmod +x /opt/yaotou/yaotoud
+  sudo systemctl start yaotou
+  sleep 1
+  systemctl is-active yaotou
+  curl -s http://127.0.0.1:8090/api/health | head -c 100; echo'
 
 echo "==> 完成"

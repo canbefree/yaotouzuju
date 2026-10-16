@@ -23,6 +23,8 @@ export default defineConfig<'webpack5'>(async (merge) => {
     },
     copy: {
       patterns: [
+        { from: 'src/assets/logo.png', to: 'dist/logo.png' },
+        { from: 'src/assets/icon.png', to: 'dist/favicon.png' }
       ],
       options: {
       }

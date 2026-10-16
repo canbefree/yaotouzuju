@@ -1,7 +1,7 @@
-import { View, Text } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 
-import Dice from '../../components/Dice'
+import logo from '../../assets/logo.png'
 import './index.scss'
 
 export default function Home() {
@@ -19,13 +19,7 @@ export default function Home() {
       </View>
 
       <View className="home-hero">
-        <View className="home-logo">
-          <Text className="home-logo-text">摇骰组局</Text>
-          <View className="home-dice-row">
-            <Dice value={2} size={64} />
-            <Dice value={5} size={64} />
-          </View>
-        </View>
+        <Image className="home-logo-img" src={logo} mode="widthFix" />
         <View className="home-slogan">吹牛骰 · 大话骰</View>
       </View>
 

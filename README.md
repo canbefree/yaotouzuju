@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="app/src/assets/logo.png" alt="摇骰组局" width="380">
+</p>
+
 # 摇骰组局（吹牛骰 / 大话骰）
 
 一个可玩通的在线小游戏：**H5 网页版 + Go 权威服务端 + SQLite 独立数据库**。
