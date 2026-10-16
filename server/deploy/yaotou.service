@@ -1,0 +1,20 @@
+[Unit]
+Description=摇骰组局 (yaotou) Go 服务
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/yaotou
+ExecStart=/opt/yaotou/yaotoud
+EnvironmentFile=-/opt/yaotou/.env
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+# 日志交给 journald
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

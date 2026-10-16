@@ -1,0 +1,26 @@
+.dice {
+  display: flex;
+  flex-wrap: wrap;
+  background: linear-gradient(160deg, #ffffff 0%, #f0e6d6 100%);
+  box-shadow: 0 4px 10px rgba(80, 50, 20, 0.28), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+  padding: 8%;
+  align-items: center;
+  justify-content: center;
+}
+
+.dice-dim {
+  opacity: 0.55;
+}
+
+.dice-cell {
+  width: 33.33%;
+  height: 33.33%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dice-pip {
+  background: radial-gradient(circle at 35% 30%, #5a4636 0%, #23190f 80%);
+  border-radius: 50%;
+}

@@ -1,0 +1,74 @@
+.rules-body {
+  padding: 24px 32px 60px;
+}
+
+.rules-hero {
+  border-radius: 28px;
+  padding: 36px 34px;
+  background: linear-gradient(120deg, #b07b45 0%, #8a5a34 100%);
+  color: #fff;
+  margin-bottom: 28px;
+}
+
+.rules-hero-title {
+  font-size: 40px;
+  font-weight: 800;
+}
+
+.rules-hero-sub {
+  margin-top: 10px;
+  font-size: 24px;
+  opacity: 0.9;
+}
+
+.rules-card {
+  padding: 30px;
+  margin-bottom: 24px;
+}
+
+.rules-card-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--wood-dark);
+  margin-bottom: 16px;
+}
+
+.rules-text {
+  font-size: 27px;
+  line-height: 1.7;
+  color: rgba(74, 53, 36, 0.85);
+}
+
+.rules-item {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 18px;
+}
+
+.rules-index {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--amber);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 18px;
+  margin-top: 4px;
+}
+
+.rules-item-text {
+  flex: 1;
+  font-size: 27px;
+  line-height: 1.6;
+  color: rgba(74, 53, 36, 0.85);
+}
+
+.rules-start {
+  margin-top: 20px;
+  width: 100%;
+}

@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+
+# 依赖
+node_modules/
+
+# 构建产物
+app/dist/
+server/dist/
+
+# 本地数据与密钥
+server/data/
+server/.env
+*.db
+*.db-wal
+*.db-shm

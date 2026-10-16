@@ -1,0 +1,88 @@
+.settings-body {
+  padding: 24px 32px 60px;
+}
+
+.settings-card {
+  padding: 28px 30px;
+  margin-bottom: 24px;
+}
+
+.settings-label {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--wood-dark);
+}
+
+.settings-name-row {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.settings-input {
+  flex: 1;
+  height: 80px;
+  background: rgba(138, 90, 52, 0.08);
+  border-radius: 16px;
+  padding: 0 24px;
+  font-size: 30px;
+}
+
+.settings-save {
+  width: 150px;
+}
+
+.settings-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(138, 90, 52, 0.1);
+}
+
+.settings-line:last-child {
+  border-bottom: none;
+}
+
+.settings-value {
+  font-size: 26px;
+  color: rgba(74, 53, 36, 0.6);
+}
+
+.settings-empty {
+  display: block;
+  margin-top: 16px;
+  font-size: 26px;
+  color: rgba(74, 53, 36, 0.55);
+}
+
+.settings-rank {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(138, 90, 52, 0.1);
+}
+
+.settings-rank-no {
+  width: 44px;
+  font-weight: 800;
+  color: var(--amber-deep);
+}
+
+.settings-rank-name {
+  font-size: 28px;
+}
+
+.settings-rank-points {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--wood-dark);
+}
+
+.settings-logout {
+  margin-top: 10px;
+  width: 100%;
+  color: var(--red);
+  border-color: rgba(229, 83, 61, 0.4);
+}

@@ -1,0 +1,238 @@
+/* 全局主题：暖木色 + 橙色（取自设计稿）
+   page 用于小程序，:root 用于 H5（Taro H5 的页面根是 .taro_page，不匹配 page 选择器） */
+page,
+:root {
+  --wood: #8a5a34;
+  --wood-dark: #6d4526;
+  --amber: #f2a33c;
+  --amber-deep: #e07b1f;
+  --cream: #fdf3e3;
+  --cream-soft: #f7e6ca;
+  --ink: #4a3524;
+  --blue: #3f7ff6;
+  --purple: #8b5cf6;
+  --green: #2fb27c;
+  --red: #e5533d;
+}
+
+page,
+:root,
+body {
+  background: #f6ead6;
+  color: #4a3524;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+view,
+text,
+button,
+input {
+  box-sizing: border-box;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-wood {
+  background: linear-gradient(180deg, #b07b45 0%, #9a6738 40%, #7d4f28 100%);
+}
+
+.page-paper {
+  background: linear-gradient(180deg, #fdf6ea 0%, #f6e6cc 100%);
+}
+
+.fill {
+  flex: 1;
+}
+
+.card {
+  background: #fffdf8;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(109, 69, 38, 0.12);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #fff;
+  height: 96px;
+  font-size: 32px;
+  border: none;
+  line-height: 1;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #f7b34a 0%, #e8842a 100%);
+  box-shadow: 0 8px 0 #c96a18;
+}
+
+.btn-blue {
+  background: linear-gradient(180deg, #5a97ff 0%, #3f7ff6 100%);
+  box-shadow: 0 8px 0 #2a5fc0;
+}
+
+.btn-purple {
+  background: linear-gradient(180deg, #a274f8 0%, #8b5cf6 100%);
+  box-shadow: 0 8px 0 #6d43c8;
+}
+
+.btn-ghost {
+  background: #fff;
+  color: var(--ink);
+  border: 2px solid rgba(138, 90, 52, 0.25);
+  box-shadow: none;
+}
+
+.btn-amber {
+  background: linear-gradient(180deg, #ffd27a 0%, #f5a623 100%);
+  color: #7a4a12;
+  box-shadow: 0 8px 0 #d98a13;
+}
+
+.btn-sm {
+  height: 72px;
+  font-size: 26px;
+}
+
+.btn:active {
+  transform: translateY(2px);
+}
+
+.muted {
+  color: rgba(74, 53, 36, 0.6);
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.tag {
+  padding: 4px 16px;
+  border-radius: 999px;
+  font-size: 22px;
+  background: rgba(138, 90, 52, 0.12);
+  color: var(--wood-dark);
+}
+
+.btn-disabled {
+  opacity: 0.45;
+}
+
+/* 通用底部弹层 / 选择器（房间页与本地页共用） */
+.overlay {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 18, 8, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+}
+
+.sheet {
+  width: 100%;
+  background: #fffdf8;
+  border-radius: 32px 32px 0 0;
+  padding: 40px 40px 60px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-title {
+  font-size: 36px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.sheet-label {
+  margin-top: 30px;
+  font-size: 26px;
+  color: rgba(74, 53, 36, 0.6);
+}
+
+.stepper {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.stepper-small {
+  gap: 20px;
+  margin-top: 0;
+}
+
+.stepper-btn {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(138, 90, 52, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--wood-dark);
+}
+
+.stepper-small .stepper-btn {
+  width: 64px;
+  height: 64px;
+  font-size: 38px;
+}
+
+.stepper-value {
+  font-size: 60px;
+  font-weight: 900;
+  min-width: 120px;
+  text-align: center;
+}
+
+.stepper-small .stepper-value {
+  font-size: 40px;
+  min-width: 80px;
+}
+
+.face-row {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.face-item {
+  padding: 10px;
+  border-radius: 18px;
+  border: 3px solid transparent;
+}
+
+.face-item-on {
+  border-color: var(--amber-deep);
+  background: rgba(242, 163, 60, 0.14);
+}
+
+.sheet-confirm {
+  margin-top: 40px;
+  width: 100%;
+}

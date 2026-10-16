@@ -1,0 +1,135 @@
+.home {
+  position: relative;
+  padding: 0 40px 60px;
+  overflow: hidden;
+}
+
+.home-settings {
+  position: absolute;
+  right: 40px;
+  top: 120px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  z-index: 5;
+}
+
+.home-hero {
+  padding-top: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-logo-text {
+  font-size: 96px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 6px;
+  text-shadow: 0 6px 0 #c0791f, 0 12px 20px rgba(0, 0, 0, 0.35);
+}
+
+.home-dice-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.home-slogan {
+  margin-top: 28px;
+  padding: 10px 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff5e2;
+  font-size: 30px;
+  letter-spacing: 3px;
+}
+
+.home-cards {
+  margin-top: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.home-card {
+  display: flex;
+  align-items: center;
+  padding: 30px 32px;
+  border-radius: 28px;
+  box-shadow: 0 10px 24px rgba(60, 35, 10, 0.28);
+}
+
+.home-card-online {
+  background: linear-gradient(120deg, #4f9bff 0%, #2f6df0 100%);
+  color: #fff;
+}
+
+.home-card-local {
+  background: linear-gradient(120deg, #ffc15e 0%, #f08a1d 100%);
+  color: #fff;
+}
+
+.home-card-rules {
+  background: #fffdf8;
+  color: var(--ink);
+}
+
+.home-card-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  margin-right: 26px;
+}
+
+.home-card-rules .home-card-icon {
+  background: rgba(138, 90, 52, 0.12);
+}
+
+.home-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-card-title {
+  font-size: 40px;
+  font-weight: 800;
+}
+
+.home-card-sub {
+  margin-top: 8px;
+  font-size: 24px;
+  opacity: 0.85;
+}
+
+.home-card-arrow {
+  font-size: 56px;
+  font-weight: 300;
+  opacity: 0.9;
+}
+
+.home-footer {
+  margin-top: auto;
+  padding-top: 60px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 26px;
+  letter-spacing: 2px;
+}

@@ -1,0 +1,42 @@
+.navbar {
+  width: 100%;
+  background: linear-gradient(180deg, #a9713f 0%, #8a5a34 100%);
+  color: #fff;
+}
+
+.navbar-light {
+  background: transparent;
+}
+
+.navbar-bar {
+  height: 88px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.navbar-side {
+  width: 120px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.navbar-right {
+  justify-content: flex-end;
+}
+
+.navbar-back {
+  font-size: 60px;
+  line-height: 1;
+  font-weight: 300;
+  margin-top: -8px;
+}
+
+.navbar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
