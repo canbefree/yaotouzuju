@@ -17,15 +17,28 @@ pkill -f "ssh -f -N -D ${PORT}" 2>/dev/null || true
 ssh -f -N -D "${PORT}" "${HOST}"
 cleanup() { pkill -f "ssh -f -N -D ${PORT}" 2>/dev/null || true; }
 trap cleanup EXIT
-sleep 2
+sleep 3
 
-if curl -x "socks5h://127.0.0.1:${PORT}" -sI -m 15 https://github.com >/dev/null; then
-  echo "==> 隧道就绪，开始推送"
-else
+# 用 api.github.com 探活（github.com 根路径在国内常超时，不代表隧道不通）
+ready=""
+for i in 1 2 3 4 5; do
+  if curl -x "socks5h://127.0.0.1:${PORT}" -s -m 15 -o /dev/null https://api.github.com; then
+    ready="yes"
+    break
+  fi
+  echo "   隧道未就绪，重试 ${i}/5 …"
+  sleep 3
+done
+if [ -z "${ready}" ]; then
   echo "!! 隧道不通，请检查 ${HOST} 的网络" >&2
+  exit 1
 fi
 
-git -c http.proxy="socks5h://127.0.0.1:${PORT}" \
-    -c https.proxy="socks5h://127.0.0.1:${PORT}" \
-    push "$@"
-echo "==> 隧道推送完成"
+if git -c http.proxy="socks5h://127.0.0.1:${PORT}" \
+       -c https.proxy="socks5h://127.0.0.1:${PORT}" \
+       push "$@"; then
+  echo "==> 隧道推送完成"
+else
+  echo "!! 推送失败" >&2
+  exit 1
+fi
