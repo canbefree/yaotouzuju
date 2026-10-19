@@ -312,35 +312,54 @@ func TestFullGameFlow(t *testing.T) {
 	}
 }
 
-func TestQuickMatchAndModes(t *testing.T) {
+func TestQuickMatchAndDiceCount(t *testing.T) {
 	e := setup(t)
 	_, envMods := e.call(t, "GET", "/api/modes", "", nil)
 	var modes []map[string]any
 	_ = json.Unmarshal(envMods.Data, &modes)
-	if len(modes) != 2 {
-		t.Fatalf("want 2 modes, got %d", len(modes))
+	if len(modes) != 1 {
+		t.Fatalf("want 1 mode, got %d", len(modes))
 	}
 
 	a := e.login(t, "qa")
 	b := e.login(t, "qb")
-	_, envA := e.call(t, "POST", "/api/room/quick", a.token, map[string]any{"mode": "quick"})
+	// 指定每人 3 颗骰子，快速匹配应进同一房间
+	_, envA := e.call(t, "POST", "/api/room/quick", a.token, map[string]any{"dicePerPlayer": 3})
 	va := parseView(t, envA)
 	if va.RoomID == "" {
-		t.Fatalf("quick mode create failed")
+		t.Fatalf("quick create failed")
 	}
-	_, envB := e.call(t, "POST", "/api/room/quick", b.token, map[string]any{"mode": "quick"})
+	_, envB := e.call(t, "POST", "/api/room/quick", b.token, map[string]any{"dicePerPlayer": 3})
 	vb := parseView(t, envB)
 	if vb.RoomID != va.RoomID {
 		t.Fatalf("quick match should join same room: %s vs %s", va.RoomID, vb.RoomID)
 	}
-	// 两人准备开局，快节奏玩法每人 3 颗骰子
 	e.call(t, "POST", "/api/room/ready", a.token, map[string]any{"roomId": va.RoomID, "ready": true})
 	_, envReady := e.call(t, "POST", "/api/room/ready", b.token, map[string]any{"roomId": va.RoomID, "ready": true})
 	vr := parseView(t, envReady)
 	if vr.Status != "playing" {
-		t.Fatalf("quick room should start, status=%s", vr.Status)
+		t.Fatalf("room should start, status=%s", vr.Status)
 	}
 	if len(vr.MyDice) != 3 {
-		t.Fatalf("quick mode should deal 3 dice, got %d", len(vr.MyDice))
+		t.Fatalf("should deal 3 dice, got %d", len(vr.MyDice))
+	}
+}
+
+func TestCreateRoomDiceClamp(t *testing.T) {
+	e := setup(t)
+	a := e.login(t, "clamp")
+	_, env := e.call(t, "POST", "/api/room/create", a.token, map[string]any{"dicePerPlayer": 99})
+	va := parseView(t, env)
+	if len(va.MyDice) != 0 {
+		t.Fatalf("waiting room should not deal dice yet")
+	}
+	// 上限 8：用 ready 开局后核对骰子数
+	b := e.login(t, "clamp2")
+	e.call(t, "POST", "/api/room/join", b.token, map[string]any{"roomId": va.RoomID})
+	e.call(t, "POST", "/api/room/ready", a.token, map[string]any{"roomId": va.RoomID, "ready": true})
+	_, envR := e.call(t, "POST", "/api/room/ready", b.token, map[string]any{"roomId": va.RoomID, "ready": true})
+	v := parseView(t, envR)
+	if len(v.MyDice) != 8 {
+		t.Fatalf("dice should clamp to 8, got %d", len(v.MyDice))
 	}
 }

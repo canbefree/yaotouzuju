@@ -162,7 +162,7 @@ func (s *Server) handleModes(w http.ResponseWriter, _ *http.Request) {
 }
 
 func modeList() []game.ModeConfig {
-	return []game.ModeConfig{game.Modes[game.ModeClassic], game.Modes[game.ModeQuick]}
+	return []game.ModeConfig{game.Modes[game.ModeClassic]}
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +222,8 @@ type roomBody struct {
 
 func (s *Server) handleRoomCreate(w http.ResponseWriter, r *http.Request, openid string) {
 	var body struct {
-		Mode string `json:"mode"`
+		Mode          string `json:"mode"`
+		DicePerPlayer int    `json:"dicePerPlayer"`
 	}
 	_ = readJSON(r, &body)
 	mode := game.ModeID(body.Mode)
@@ -230,7 +231,7 @@ func (s *Server) handleRoomCreate(w http.ResponseWriter, r *http.Request, openid
 		mode = game.ModeClassic
 	}
 	nick, av := s.profile(openid)
-	roomID, err := s.Engine.Create(mode, game.UserInfo{OpenID: openid, Nickname: nick, Avatar: av})
+	roomID, err := s.Engine.Create(mode, body.DicePerPlayer, game.UserInfo{OpenID: openid, Nickname: nick, Avatar: av})
 	if err != nil {
 		fail(w, err)
 		return
@@ -240,15 +241,11 @@ func (s *Server) handleRoomCreate(w http.ResponseWriter, r *http.Request, openid
 
 func (s *Server) handleRoomQuick(w http.ResponseWriter, r *http.Request, openid string) {
 	var body struct {
-		Mode string `json:"mode"`
+		DicePerPlayer int `json:"dicePerPlayer"`
 	}
 	_ = readJSON(r, &body)
 	nick, av := s.profile(openid)
-	var mode game.ModeID
-	if game.IsMode(body.Mode) {
-		mode = game.ModeID(body.Mode)
-	}
-	roomID, err := s.Engine.QuickMatch(game.UserInfo{OpenID: openid, Nickname: nick, Avatar: av}, mode)
+	roomID, err := s.Engine.QuickMatch(game.UserInfo{OpenID: openid, Nickname: nick, Avatar: av}, body.DicePerPlayer)
 	if err != nil {
 		fail(w, err)
 		return
@@ -333,12 +330,17 @@ func (s *Server) handleRoomLeave(w http.ResponseWriter, r *http.Request, openid 
 func (s *Server) handleBid(w http.ResponseWriter, r *http.Request, openid string) {
 	var body struct {
 		RoomID   string `json:"roomId"`
+		Kind     string `json:"kind"`
 		Quantity int    `json:"quantity"`
 		Face     int    `json:"face"`
 	}
 	_ = readJSON(r, &body)
 	id := strings.ToUpper(strings.TrimSpace(body.RoomID))
-	roomID, err := s.Engine.Bid(id, openid, body.Quantity, body.Face)
+	kind := game.BidKindPoint
+	if strings.TrimSpace(body.Kind) == string(game.BidKindPillar) {
+		kind = game.BidKindPillar
+	}
+	roomID, err := s.Engine.Bid(id, openid, kind, body.Quantity, body.Face)
 	if err != nil {
 		fail(w, err)
 		return

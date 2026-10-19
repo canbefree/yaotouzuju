@@ -80,6 +80,14 @@
   letter-spacing: 4px;
 }
 
+/* H5 下 Taro 的 Input 外层是 taro-input-core，内层原生 input 默认很矮，
+   撑满外层便于点击/聚焦（小程序无此内层结构，规则不生效也无副作用） */
+.join-input input {
+  height: 100%;
+  font-size: 32px;
+  letter-spacing: 4px;
+}
+
 .join-go {
   width: 160px;
   flex: none;
@@ -141,4 +149,38 @@
 .room-row-arrow {
   font-size: 48px;
   color: rgba(74, 53, 36, 0.5);
+}
+
+/* 单玩法 + 骰子数量设置 */
+.mode-pill {
+  align-self: center;
+  margin-top: 8px;
+  padding: 10px 30px;
+  border-radius: 999px;
+  background: rgba(138, 90, 52, 0.12);
+  color: var(--wood-dark);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.dice-set {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 30px;
+}
+
+.dice-set-title {
+  display: block;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.dice-set-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 22px;
+  color: rgba(74, 53, 36, 0.55);
 }

@@ -7,6 +7,8 @@ export interface ModeConfig {
   name: string
   desc: string
   dicePerPlayer: number
+  minDicePerPlayer: number
+  maxDicePerPlayer: number
   targetScore: number
   minPlayers: number
   maxPlayers: number
@@ -14,9 +16,14 @@ export interface ModeConfig {
 
 export type RoomStatus = 'waiting' | 'playing' | 'roundEnd' | 'finished'
 
+export type BidKind = 'point' | 'pillar'
+
 export interface Bid {
   seat: number
+  /** point＝普通叫点「N 个 X」；pillar＝叫柱「N 柱」（不限点数） */
+  kind: BidKind
   quantity: number
+  /** 柱时为 0 */
   face: number
   at: number
 }
@@ -41,6 +48,8 @@ export interface RoundResult {
   bid: Bid
   actual: number
   bidTrue: boolean
+  /** 柱结算时出现次数最多的点数（普通叫点时为叫的点数） */
+  pillarFace: number
   winnerSeat: number
   loserSeat: number
   deltas: Delta[]
@@ -78,6 +87,8 @@ export interface RoomView {
   roomId: string
   mode: ModeId
   modeName: string
+  dicePerPlayer: number
+  maxPlayers: number
   hostOpenid: string
   status: RoomStatus
   round: number
@@ -97,6 +108,7 @@ export interface PublicRoom {
   roomId: string
   mode: ModeId
   modeName: string
+  dicePerPlayer: number
   count: number
   maxPlayers: number
   status: RoomStatus

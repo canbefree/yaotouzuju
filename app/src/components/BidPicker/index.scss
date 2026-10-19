@@ -1,0 +1,140 @@
+.bid-sheet {
+  animation: sheet-up 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(12%);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.bid-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.bid-tabs {
+  display: inline-flex;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(138, 90, 52, 0.12);
+}
+
+.bid-tab {
+  padding: 12px 48px;
+  border-radius: 999px;
+  font-size: 30px;
+  font-weight: 700;
+  color: rgba(74, 53, 36, 0.55);
+  transition: all 0.18s ease;
+}
+
+.bid-tab-on {
+  background: linear-gradient(180deg, #f7b34a 0%, #e8842a 100%);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(201, 106, 24, 0.4);
+}
+
+.bid-tab-off {
+  opacity: 0.35;
+}
+
+.bid-hint-text {
+  font-size: 24px;
+  color: rgba(74, 53, 36, 0.6);
+}
+
+.bid-wheels {
+  position: relative;
+  margin-top: 24px;
+  display: flex;
+  gap: 24px;
+}
+
+.bid-wheel {
+  flex: 1;
+  min-width: 0;
+}
+
+.bid-wheels.single .bid-wheel {
+  flex: none;
+  width: 46%;
+  margin: 0 auto;
+}
+
+/* 中央选中框 */
+.wheel-mid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  border-top: 3px solid rgba(232, 132, 42, 0.85);
+  border-bottom: 3px solid rgba(232, 132, 42, 0.85);
+  border-radius: 16px;
+  background: rgba(242, 163, 60, 0.1);
+  pointer-events: none;
+}
+
+.bid-preview {
+  margin-top: 20px;
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  animation: bid-pop 0.2s ease;
+}
+
+.bid-preview-num {
+  font-size: 60px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.bid-preview-num.gold {
+  color: #d98a13;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.6);
+}
+
+.bid-preview-unit {
+  font-size: 32px;
+  font-weight: 700;
+  color: rgba(74, 53, 36, 0.6);
+}
+
+.bid-preview-dice {
+  margin-left: 16px;
+}
+
+.bid-pillar-badge {
+  font-size: 34px;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(180deg, #ffd27a 0%, #f5a623 100%);
+  border-radius: 14px;
+  padding: 6px 20px;
+  box-shadow: 0 4px 0 #d98a13;
+}
+
+.bid-confirm {
+  margin-top: 24px;
+  width: 100%;
+}
+
+@keyframes bid-pop {
+  from {
+    transform: scale(0.86);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

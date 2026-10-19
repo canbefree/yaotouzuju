@@ -1,0 +1,20 @@
+.wheel {
+  width: 100%;
+  text-align: center;
+  overflow-y: scroll;
+}
+
+.wheel-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 800;
+  color: rgba(74, 53, 36, 0.28);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.wheel-item.on {
+  color: var(--ink);
+  transform: scale(1.12);
+}

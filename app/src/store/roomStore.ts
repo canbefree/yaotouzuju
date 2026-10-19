@@ -92,13 +92,13 @@ export const room = {
     Taro.setStorageSync('yaotou.recent', next)
   },
 
-  async create(mode: string): Promise<RoomView> {
+  async create(mode: string, dicePerPlayer: number): Promise<RoomView> {
     await ensureLogin()
-    return afterEnter(await api.createRoom(getToken(), mode))
+    return afterEnter(await api.createRoom(getToken(), mode, dicePerPlayer))
   },
-  async quick(mode?: string): Promise<RoomView> {
+  async quick(dicePerPlayer: number): Promise<RoomView> {
     await ensureLogin()
-    return afterEnter(await api.quickMatch(getToken(), mode))
+    return afterEnter(await api.quickMatch(getToken(), dicePerPlayer))
   },
   async join(roomId: string): Promise<RoomView> {
     await ensureLogin()
@@ -127,10 +127,10 @@ export const room = {
     if (!id) return
     setState({ view: await api.start(getToken(), id) })
   },
-  async bid(quantity: number, face: number): Promise<void> {
+  async bid(kind: 'point' | 'pillar', quantity: number, face: number): Promise<void> {
     const id = state.view?.roomId
     if (!id) return
-    setState({ view: await api.bid(getToken(), id, quantity, face) })
+    setState({ view: await api.bid(getToken(), id, kind, quantity, face) })
   },
   async challenge(): Promise<void> {
     const id = state.view?.roomId

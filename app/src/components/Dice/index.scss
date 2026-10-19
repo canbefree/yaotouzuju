@@ -1,15 +1,103 @@
 .dice {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
-  background: linear-gradient(160deg, #ffffff 0%, #f0e6d6 100%);
-  box-shadow: 0 4px 10px rgba(80, 50, 20, 0.28), inset 0 2px 4px rgba(255, 255, 255, 0.9);
-  padding: 8%;
   align-items: center;
   justify-content: center;
+  /* 内边距由行内按骰子尺寸给（用 % 会以内层容器的宽度为基准，把点挤成细条） */
+  background: radial-gradient(circle at 32% 24%, #fffdf9 0%, #f6ecda 52%, #e6d5ba 100%);
+  border: 2px solid rgba(150, 112, 70, 0.28);
+  box-shadow: 0 0.16rem 0.34rem rgba(70, 42, 14, 0.3), inset 0 0.06rem 0.12rem #ffffff,
+    inset 0 -0.12rem 0.2rem rgba(150, 110, 66, 0.2);
 }
 
-.dice-dim {
-  opacity: 0.55;
+/* 盖着/隐藏的骰子：暖木色背面 + 菱形徽记，与白骰明显区分 */
+.dice-back {
+  background: linear-gradient(155deg, #d79a5b 0%, #b8773a 55%, #96602c 100%);
+  border-color: rgba(90, 56, 20, 0.45);
+  box-shadow: 0 0.16rem 0.34rem rgba(70, 42, 14, 0.3), inset 0 0.06rem 0.12rem rgba(255, 235, 205, 0.5),
+    inset 0 -0.12rem 0.2rem rgba(80, 46, 12, 0.4);
+}
+
+/* 选中：金色描边 + 微浮起 */
+.dice-sel {
+  border-color: #f0a52c;
+  box-shadow: 0 0 0 2px rgba(255, 205, 120, 0.65), 0 0.2rem 0.4rem rgba(201, 106, 24, 0.45),
+    0 0 0.34rem rgba(255, 180, 60, 0.55), inset 0 0.06rem 0.12rem #ffffff,
+    inset 0 -0.12rem 0.2rem rgba(150, 110, 66, 0.2);
+  transform: translateY(-6%);
+}
+
+/* 加强特效：彩色辉光 + 粒子 */
+.dice-glow {
+  border-color: rgba(255, 255, 255, 0.9);
+  animation: dice-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes dice-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0.07rem rgba(255, 255, 255, 0.95), 0 0 0.12rem 0.04rem rgba(255, 45, 85, 1),
+      0 0 0.18rem 0.09rem rgba(255, 165, 0, 1), 0 0 0.26rem 0.14rem rgba(0, 220, 120, 1),
+      0 0 0.36rem 0.19rem rgba(0, 140, 255, 1), 0 0 0.5rem 0.26rem rgba(190, 60, 235, 0.95);
+  }
+  50% {
+    box-shadow: 0 0 0 0.07rem rgba(255, 255, 255, 1), 0 0 0.16rem 0.06rem rgba(255, 45, 85, 1),
+      0 0 0.24rem 0.12rem rgba(255, 165, 0, 1), 0 0 0.34rem 0.18rem rgba(0, 220, 120, 1),
+      0 0 0.46rem 0.24rem rgba(0, 140, 255, 1), 0 0 0.62rem 0.32rem rgba(190, 60, 235, 0.95);
+  }
+}
+
+.dice-spark {
+  position: absolute;
+  width: 0.22rem;
+  height: 0.22rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, rgba(255, 250, 230, 0.5) 45%, rgba(255, 255, 255, 0) 72%);
+  animation: dice-twinkle 1.4s ease-in-out infinite;
+}
+
+.dice-spark.s1 {
+  top: -14%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.dice-spark.s2 {
+  top: 12%;
+  right: -14%;
+  animation-delay: 0.35s;
+}
+
+.dice-spark.s3 {
+  bottom: -12%;
+  right: 16%;
+  animation-delay: 0.7s;
+}
+
+.dice-spark.s4 {
+  bottom: 8%;
+  left: -14%;
+  animation-delay: 1s;
+}
+
+@keyframes dice-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+.dice-emblem {
+  border: 3px solid rgba(255, 246, 230, 0.85);
+  border-radius: 4px;
+  transform: rotate(45deg);
+  box-shadow: 0 0 6px rgba(255, 240, 215, 0.5);
 }
 
 .dice-cell {
@@ -21,6 +109,38 @@
 }
 
 .dice-pip {
-  background: radial-gradient(circle at 35% 30%, #5a4636 0%, #23190f 80%);
+  background: radial-gradient(circle at 35% 30%, #4a3a2a 0%, #16100a 85%);
   border-radius: 50%;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 1px 1px rgba(255, 255, 255, 0.25);
+}
+
+/* 1 点用红色，更醒目 */
+.dice-pip-red {
+  background: radial-gradient(circle at 35% 30%, #e5544a 0%, #b81f13 85%);
+}
+
+.dice-rolling {
+  animation: dice-roll 0.42s ease-in-out infinite;
+}
+
+@keyframes dice-roll {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-6%) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(0) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-4%) rotate(6deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.dice-dim {
+  opacity: 0.55;
 }

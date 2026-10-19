@@ -57,8 +57,10 @@ export const api = {
   updateProfile: (token: string, nickname: string, avatar: string) =>
     request<{ openid: string; nickname: string; avatar: string }>('/profile', { token, data: { nickname, avatar } }),
 
-  createRoom: (token: string, mode: string) => request<RoomView>('/room/create', { token, data: { mode } }),
-  quickMatch: (token: string, mode?: string) => request<RoomView>('/room/quick', { token, data: { mode } }),
+  createRoom: (token: string, mode: string, dicePerPlayer: number) =>
+    request<RoomView>('/room/create', { token, data: { mode, dicePerPlayer } }),
+  quickMatch: (token: string, dicePerPlayer: number) =>
+    request<RoomView>('/room/quick', { token, data: { dicePerPlayer } }),
   joinRoom: (token: string, roomId: string) => request<RoomView>('/room/join', { token, data: { roomId } }),
   roomList: () => request<PublicRoom[]>('/room/list', { method: 'GET' }),
   roomState: (token: string, roomId: string) =>
@@ -68,8 +70,8 @@ export const api = {
   start: (token: string, roomId: string) => request<RoomView>('/room/start', { token, data: { roomId } }),
   leave: (token: string, roomId: string) => request<{ left: boolean }>('/room/leave', { token, data: { roomId } }),
 
-  bid: (token: string, roomId: string, quantity: number, face: number) =>
-    request<RoomView>('/game/bid', { token, data: { roomId, quantity, face } }),
+  bid: (token: string, roomId: string, kind: 'point' | 'pillar', quantity: number, face: number) =>
+    request<RoomView>('/game/bid', { token, data: { roomId, kind, quantity, face } }),
   challenge: (token: string, roomId: string) => request<RoomView>('/game/challenge', { token, data: { roomId } }),
   next: (token: string, roomId: string) => request<RoomView>('/game/next', { token, data: { roomId } }),
 

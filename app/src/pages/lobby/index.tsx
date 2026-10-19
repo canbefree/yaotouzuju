@@ -5,7 +5,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 import NavBar from '../../components/NavBar'
 import Background from '../../components/Background'
 import { api, ApiError } from '../../api/client'
-import type { ModeConfig, ModeId, PublicRoom } from '../../api/types'
+import type { ModeConfig, PublicRoom } from '../../api/types'
 import { room } from '../../store/roomStore'
 import './index.scss'
 
@@ -15,7 +15,7 @@ interface Recent {
 }
 
 export default function Lobby() {
-  const [mode, setMode] = useState<ModeId>('classic')
+  const [dice, setDice] = useState(5)
   const [modes, setModes] = useState<ModeConfig[]>([])
   const [rooms, setRooms] = useState<PublicRoom[]>([])
   const [recent, setRecent] = useState<Recent[]>([])
@@ -29,6 +29,8 @@ export default function Lobby() {
       const [ms, rs] = await Promise.all([api.modes(), api.roomList()])
       setModes(ms)
       setRooms(rs)
+      const cfg = ms[0]
+      if (cfg) setDice((d) => Math.min(Math.max(d, cfg.minDicePerPlayer), cfg.maxDicePerPlayer))
     } catch {
       /* ignore */
     }
@@ -52,8 +54,11 @@ export default function Lobby() {
     }
   }
 
-  const onCreate = () => run(() => room.create(mode))
-  const onQuick = () => run(() => room.quick(mode))
+  const onCreate = () => run(() => room.create('classic', dice))
+  const onQuick = () => run(() => room.quick(dice))
+  const cfg = modes[0]
+  const minDice = cfg?.minDicePerPlayer ?? 2
+  const maxDice = cfg?.maxDicePerPlayer ?? 8
   const onJoin = () => {
     if (code.trim().length < 4) {
       Taro.showToast({ title: '请输入房间号', icon: 'none' })
@@ -61,8 +66,6 @@ export default function Lobby() {
     }
     void run(() => room.join(code.trim()))
   }
-
-  const modeInfo = modes.find((m) => m.id === mode)
 
   return (
     <View className="page page-paper lobby">
@@ -74,14 +77,23 @@ export default function Lobby() {
           <Text className="lobby-banner-sub">创建房间，邀请好友，随时开一局</Text>
         </View>
 
-        <View className="seg">
-          {(['classic', 'quick'] as ModeId[]).map((m) => (
-            <View key={m} className={`seg-item ${m === mode ? 'seg-item-on' : ''}`} onClick={() => setMode(m)}>
-              {m === 'classic' ? '吹牛骰 · 5骰' : '大话骰 · 3骰'}
+        <View className="mode-pill">吹牛骰 · 先到 100 分胜</View>
+
+        <View className="dice-set card">
+          <View className="dice-set-left">
+            <Text className="dice-set-title">每人骰子</Text>
+            <Text className="dice-set-sub">默认为 5 颗</Text>
+          </View>
+          <View className="stepper stepper-small">
+            <View className="stepper-btn" onClick={() => setDice((d) => Math.max(minDice, d - 1))}>
+              −
             </View>
-          ))}
+            <Text className="stepper-value">{dice}</Text>
+            <View className="stepper-btn" onClick={() => setDice((d) => Math.min(maxDice, d + 1))}>
+              +
+            </View>
+          </View>
         </View>
-        {modeInfo ? <Text className="lobby-mode-desc">{modeInfo.desc}</Text> : null}
 
         <View className="lobby-actions">
           <View className="btn btn-primary lobby-btn" onClick={onCreate}>
@@ -103,6 +115,7 @@ export default function Lobby() {
               maxlength={8}
               placeholder="输入 6 位房间号"
               value={code}
+              focus={showJoin}
               onInput={(e) => setCode((e.detail.value || '').toUpperCase())}
             />
             <View className="btn btn-amber btn-sm join-go" onClick={onJoin}>
@@ -138,7 +151,7 @@ export default function Lobby() {
                 <View className="room-row-body">
                   <Text className="room-row-name">房间 {r.roomId}</Text>
                   <Text className="room-row-sub">
-                    {r.count}/{r.maxPlayers} 人 · {r.modeName}
+                    {r.count}/{r.maxPlayers} 人 · 每人 {r.dicePerPlayer} 骰
                   </Text>
                 </View>
                 <Text className="room-row-arrow">›</Text>

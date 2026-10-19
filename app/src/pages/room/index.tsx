@@ -1,21 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, Input, ScrollView } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 
 import Dice from '../../components/Dice'
 import NavBar from '../../components/NavBar'
 import Background from '../../components/Background'
+import BidPicker from '../../components/BidPicker'
 import { ApiError } from '../../api/client'
 import { getProfile } from '../../store/session'
 import { room, subscribeRoom, getRoom, type RoomState } from '../../store/roomStore'
+import { bidFull, type BidChoice } from '../../game/bid'
 import './index.scss'
 
 export default function Room() {
   const [state, setState] = useState<RoomState>(getRoom())
   const [showBid, setShowBid] = useState(false)
-  const [qty, setQty] = useState(1)
-  const [face, setFace] = useState(1)
   const [chatText, setChatText] = useState('')
+  const [rolling, setRolling] = useState(false)
+  const [rollDice, setRollDice] = useState<number[]>([])
+  const lastTurn = useRef<number>(-1)
 
   useEffect(() => subscribeRoom(setState), [])
 
@@ -28,16 +31,37 @@ export default function Room() {
   const active = view?.players.filter((p) => !p.left) || []
   const isHost = view ? view.hostOpenid === getProfile()?.openid : false
   const isMyTurn = !!view && view.status === 'playing' && view.turnSeat === view.mySeat
-  const minQty = view?.bid ? view.bid.quantity : Math.max(1, Math.floor(active.length / 2))
+  const per = view?.dicePerPlayer || 5
+  const totalDice = active.length * per
 
+  // 开局/新一轮：摇骰动画
   useEffect(() => {
-    if (showBid) {
-      const q = view?.bid ? view.bid.quantity : minQty
-      const f = view?.bid ? (view.bid.face < 6 ? view.bid.face + 1 : 6) : 1
-      setQty(Math.max(q, minQty))
-      setFace(f)
+    if (!view || view.status !== 'playing' || view.round === 0) return
+    let ticks = 0
+    setRolling(true)
+    const timer = setInterval(() => {
+      setRollDice(Array.from({ length: per }, () => 1 + Math.floor(Math.random() * 6)))
+      ticks += 1
+      if (ticks >= 8) {
+        clearInterval(timer)
+        setRolling(false)
+      }
+    }, 70)
+    return () => clearInterval(timer)
+  }, [view?.round])
+
+  // 轮到我：轻震动 + 提示
+  useEffect(() => {
+    if (!isMyTurn || !view) return
+    if (lastTurn.current !== view.turnSeat) {
+      lastTurn.current = view.turnSeat
+      try {
+        Taro.vibrateShort({ type: 'medium' })
+      } catch {
+        /* H5 可能不支持 */
+      }
     }
-  }, [showBid])
+  }, [isMyTurn])
 
   const toast = (e: unknown) => {
     const msg = e instanceof ApiError ? e.message : '操作失败'
@@ -58,9 +82,9 @@ export default function Room() {
       toast(e)
     }
   }
-  const onBid = async () => {
+  const onBid = async (choice: BidChoice) => {
     try {
-      await room.bid(qty, face)
+      await room.bid(choice.kind, choice.quantity, choice.face)
       setShowBid(false)
     } catch (e) {
       toast(e)
@@ -107,7 +131,10 @@ export default function Room() {
   }
 
   const opponents = view.players.filter((p) => p.left === false && p.seat !== view.mySeat)
-  const bidText = view.bid ? `${view.bid.quantity} 个 ${view.bid.face}` : '等待叫点'
+  const isPillar = view.bid?.kind === 'pillar'
+  // 高亮：叫点阶段，我的骰子里与当前叫点相同的；豹子（全同点）用加强特效
+  const myHiFace = view.bid && !isPillar && view.status === 'playing' ? view.bid.face : 0
+  const myBaozi = view.status === 'playing' && view.myDice.length > 1 && view.myDice.every((d) => d === view.myDice[0])
 
   return (
     <View className="page room">
@@ -119,10 +146,10 @@ export default function Room() {
       />
 
       <View className="room-info">
-        <Text className="room-info-mode">{view.modeName}</Text>
+        <Text className="room-info-mode">{view.modeName} · 每人 {view.dicePerPlayer} 骰</Text>
         <Text className="room-info-dot">·</Text>
         <Text className="room-info-count">
-          {active.length}/{view.targetScore >= 100 ? 5 : 6} 人
+          {active.length}/{view.maxPlayers} 人
         </Text>
         {view.round > 0 ? <Text className="tag room-info-round">第 {view.round} 轮</Text> : null}
         <View className="fill" />
@@ -138,7 +165,7 @@ export default function Room() {
             <Text className="seat-score">{p.score} 分</Text>
             <View className="seat-dice">
               {Array.from({ length: p.diceCount }).map((_, i) => (
-                <Dice key={i} value={p.dice ? p.dice[i] : 0} size={34} dim={!p.dice} />
+                <Dice key={i} value={p.dice ? p.dice[i] : 0} size={34} />
               ))}
             </View>
             {view.status === 'waiting' ? (
@@ -156,11 +183,17 @@ export default function Room() {
             <Text className="room-waitcard-sub">邀请好友输入房间号 {view.roomId} 加入</Text>
           </View>
         ) : (
-          <View className="room-bidcard">
-            <Text className="room-bidcard-label">当前叫点</Text>
-            <Text className="room-bidcard-value">{bidText}</Text>
+          <View key={view.bid?.at || 0} className={`room-bidcard ${view.bid ? 'bid-pop' : ''} ${isPillar ? 'bidcard-pillar' : ''}`}>
+            <Text className="room-bidcard-label">{isPillar ? '当前叫柱' : '当前叫点'}</Text>
+            <View className="room-bidcard-row">
+              {isPillar ? <View className="pillar-badge">柱</View> : null}
+              <Text className="room-bidcard-value">{view.bid ? bidFull(view.bid) : '等待叫点'}</Text>
+            </View>
+            <Text className="room-bidcard-by">
+              {view.bid ? `${view.players.find((p) => p.seat === view.bid?.seat)?.nickname || ''} 喊的` : ''}
+            </Text>
             {view.turnSeat >= 0 && view.status === 'playing' ? (
-              <Text className="room-bidcard-turn">
+              <Text className={`room-bidcard-turn ${isMyTurn ? 'turn-mine' : ''}`}>
                 {isMyTurn ? '轮到你了' : `等待 ${view.players.find((p) => p.seat === view.turnSeat)?.nickname || ''} 叫点`}
               </Text>
             ) : null}
@@ -182,8 +215,16 @@ export default function Room() {
         </View>
         <View className="room-me-dice">
           {view.status === 'waiting'
-            ? Array.from({ length: view.mode === 'classic' ? 5 : 3 }).map((_, i) => <Dice key={i} value={0} size={72} dim />)
-            : view.myDice.map((d, i) => <Dice key={i} value={d} size={80} />)}
+            ? Array.from({ length: per }).map((_, i) => <Dice key={i} value={0} size={88} />)
+            : view.myDice.map((d, i) => (
+                <Dice
+                  key={i}
+                  value={rolling ? rollDice[i] || d : d}
+                  size={88}
+                  rolling={rolling}
+                  variant={myBaozi ? 'glow' : d === myHiFace ? 'selected' : 'normal'}
+                />
+              ))}
         </View>
       </View>
 
@@ -204,10 +245,10 @@ export default function Room() {
 
         {view.status === 'playing' ? (
           <>
-            <View className={`btn room-act btn-amber ${isMyTurn ? '' : 'btn-disabled'}`} onClick={() => isMyTurn && setShowBid(true)}>
+            <View className={`btn room-act btn-amber ${isMyTurn ? 'act-glow' : 'btn-disabled'}`} onClick={() => isMyTurn && setShowBid(true)}>
               叫点数
             </View>
-            <View className={`btn room-act btn-blue ${isMyTurn && view.bid ? '' : 'btn-disabled'}`} onClick={() => isMyTurn && view.bid && onChallenge()}>
+            <View className={`btn room-act btn-blue ${isMyTurn && view.bid ? 'act-glow-blue' : 'btn-disabled'}`} onClick={() => isMyTurn && view.bid && onChallenge()}>
               吹牛
             </View>
           </>
@@ -242,35 +283,14 @@ export default function Room() {
         </View>
       ) : null}
 
-      {/* 叫点面板 */}
-      {showBid ? (
-        <View className="overlay" onClick={() => setShowBid(false)}>
-          <View className="sheet" onClick={(e) => e.stopPropagation()}>
-            <Text className="sheet-title">叫点数</Text>
-            <Text className="sheet-label">数量（至少 {minQty}）</Text>
-            <View className="stepper">
-              <View className="stepper-btn" onClick={() => setQty((q) => Math.max(minQty, q - 1))}>
-                −
-              </View>
-              <Text className="stepper-value">{qty}</Text>
-              <View className="stepper-btn" onClick={() => setQty((q) => Math.min(active.length * 5, q + 1))}>
-                +
-              </View>
-            </View>
-            <Text className="sheet-label">点数</Text>
-            <View className="face-row">
-              {[1, 2, 3, 4, 5, 6].map((f) => (
-                <View key={f} className={`face-item ${f === face ? 'face-item-on' : ''}`} onClick={() => setFace(f)}>
-                  <Dice value={f} size={56} />
-                </View>
-              ))}
-            </View>
-            <View className="btn btn-primary sheet-confirm" onClick={onBid}>
-              确认叫 {qty} 个 {face}
-            </View>
-          </View>
-        </View>
-      ) : null}
+      <BidPicker
+        visible={showBid}
+        prev={view.bid}
+        playerCount={active.length}
+        totalDice={totalDice}
+        onClose={() => setShowBid(false)}
+        onConfirm={onBid}
+      />
 
       {/* 结算 */}
       {state.roundResult || state.matchResult ? (
@@ -296,6 +316,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
           return { seat: d.seat, openid: p?.openid || '', nickname: p?.nickname || '', avatar: p?.avatar || '', score: d.score, delta: d.delta }
         })
 
+  const hitFace = round ? (round.bid.kind === 'pillar' ? round.pillarFace : round.bid.face) : 0
   const winnerName = match
     ? view.players.find((p) => p.seat === match.winnerSeat)?.nickname
     : round
@@ -311,10 +332,12 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
         {round ? (
           <View className="result-reveal">
             <Text className="result-reveal-line">
-              {round.bidderSeat >= 0 ? `${view.players.find((p) => p.seat === round.bidderSeat)?.nickname} 叫 ${round.bid.quantity} 个 ${round.bid.face}` : ''}
+              {round.bidderSeat >= 0 ? `${view.players.find((p) => p.seat === round.bidderSeat)?.nickname} 叫 ${bidFull(round.bid)}` : ''}
             </Text>
-            <Text className="result-reveal-line">
-              实际共 {round.actual} 个 {round.bid.face} → 叫点{round.bidTrue ? '成立' : '不成立'}
+            <Text className={`result-reveal-line ${round.bidTrue ? 'good' : 'bad'}`}>
+              {round.bid.kind === 'pillar'
+                ? `全场最多 ${round.pillarFace} 点 ×${round.actual} → ${round.bid.quantity} 柱${round.bidTrue ? '成立' : '不成立'}`
+                : `实际共 ${round.actual} 个 ${round.bid.face} → 叫点${round.bidTrue ? '成立' : '不成立'}`}
             </Text>
             <View className="result-reveal-dice">
               {round.reveal.map((r) => (
@@ -322,7 +345,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
                   <Text className="result-reveal-name">{r.nickname}</Text>
                   <View className="result-reveal-diceset">
                     {r.dice.map((d, i) => (
-                      <Dice key={i} value={d} size={40} />
+                      <Dice key={i} value={d} size={46} variant={d === hitFace ? 'selected' : 'normal'} />
                     ))}
                   </View>
                 </View>

@@ -96,13 +96,14 @@ func (e *Engine) Restore(r *Room) {
 	if r.BidHistory == nil {
 		r.BidHistory = []Bid{}
 	}
+	r.DicePerPlayer = ClampDice(r.DicePerPlayer)
 	e.rooms[r.RoomID] = r
 }
 
 // ---------------------------------------------------------------- 房间操作
 
-// Create 建房并把房主加入。
-func (e *Engine) Create(mode ModeID, u UserInfo) (string, error) {
+// Create 建房并把房主加入。dicePerPlayer 为每人骰子数（0 取默认 5）。
+func (e *Engine) Create(mode ModeID, dicePerPlayer int, u UserInfo) (string, error) {
 	if !IsMode(string(mode)) {
 		mode = ModeClassic
 	}
@@ -110,7 +111,8 @@ func (e *Engine) Create(mode ModeID, u UserInfo) (string, error) {
 	e.mu.Lock()
 	id := e.makeRoomIDLocked()
 	room := &Room{
-		RoomID: id, Mode: mode, HostOpenID: u.OpenID, Status: StatusWaiting,
+		RoomID: id, Mode: mode, DicePerPlayer: ClampDice(dicePerPlayer),
+		HostOpenID: u.OpenID, Status: StatusWaiting,
 		TargetScore: cfg.TargetScore, Players: []*Player{}, TurnSeat: -1,
 		BidHistory: []Bid{}, CreatedAt: nowMs(), UpdatedAt: nowMs(),
 	}
@@ -146,14 +148,11 @@ func (e *Engine) Join(roomID string, u UserInfo) (string, error) {
 	return roomID, nil
 }
 
-// QuickMatch 快速匹配：优先加入等待中的房间，否则新建。
-func (e *Engine) QuickMatch(u UserInfo, mode ModeID) (string, error) {
+// QuickMatch 快速匹配：优先加入等待中的房间，否则按给定骰子数新建。
+func (e *Engine) QuickMatch(u UserInfo, dicePerPlayer int) (string, error) {
 	e.mu.Lock()
 	for _, room := range e.rooms {
 		if room.Status != StatusWaiting {
-			continue
-		}
-		if mode != "" && room.Mode != mode {
 			continue
 		}
 		if e.findActiveLocked(room, u.OpenID) == nil {
@@ -171,10 +170,7 @@ func (e *Engine) QuickMatch(u UserInfo, mode ModeID) (string, error) {
 		return id, nil
 	}
 	e.mu.Unlock()
-	if mode == "" {
-		mode = ModeClassic
-	}
-	return e.Create(mode, u)
+	return e.Create(ModeClassic, dicePerPlayer, u)
 }
 
 // SetReady 设置准备状态；满员且全部准备则自动开局。
@@ -226,8 +222,8 @@ func (e *Engine) Start(roomID, openid string) (string, error) {
 	return roomID, nil
 }
 
-// Bid 叫点。
-func (e *Engine) Bid(roomID, openid string, quantity, face int) (string, error) {
+// Bid 叫点。kind 为 BidKindPoint（默认）或 BidKindPillar（柱，face 忽略）。
+func (e *Engine) Bid(roomID, openid string, kind BidKind, quantity, face int) (string, error) {
 	e.mu.Lock()
 	room, ok := e.rooms[roomID]
 	if !ok {
@@ -247,11 +243,21 @@ func (e *Engine) Bid(roomID, openid string, quantity, face int) (string, error) 
 		e.mu.Unlock()
 		return "", newErr("NOT_YOUR_TURN", "还没轮到你", 400)
 	}
-	if !IsValidRaise(room.Bid, quantity, face, e.activeCountLocked(room)) {
+	if kind != BidKindPillar {
+		kind = BidKindPoint
+	}
+	if !IsValidRaise(room.Bid, kind, quantity, face, e.activeCountLocked(room)) {
 		e.mu.Unlock()
+		if kind == BidKindPillar {
+			return "", newErr("BAD_BID", "柱必须比上家大（普通叫点后可从“数量-1”柱起，柱后只能继续加柱）", 400)
+		}
 		return "", newErr("BAD_BID", "叫点必须比上家大（数量更多，或同数量点数更大）", 400)
 	}
-	room.Bid = &Bid{Seat: p.Seat, Quantity: quantity, Face: face, At: nowMs()}
+	bid := &Bid{Seat: p.Seat, Kind: kind, Quantity: quantity, At: nowMs()}
+	if kind == BidKindPoint {
+		bid.Face = face
+	}
+	room.Bid = bid
 	room.BidHistory = append(room.BidHistory, *room.Bid)
 	e.nextTurnLocked(room, p.Seat)
 	e.mu.Unlock()
@@ -509,7 +515,6 @@ func (e *Engine) beginMatchLocked(room *Room) {
 }
 
 func (e *Engine) startRoundLocked(room *Room) {
-	cfg := GetMode(room.Mode)
 	room.Round++
 	room.Status = StatusPlaying
 	room.Bid = nil
@@ -520,7 +525,7 @@ func (e *Engine) startRoundLocked(room *Room) {
 			p.Dice = nil
 			continue
 		}
-		p.Dice = RollDice(cfg.DicePerPlayer)
+		p.Dice = RollDice(ClampDice(room.DicePerPlayer))
 	}
 	seats := e.activeSeatsLocked(room)
 	if len(seats) > 0 {
@@ -571,7 +576,11 @@ func (e *Engine) settleLocked(room *Room, bidderSeat, challengerSeat int) Event 
 	for _, p := range active {
 		allDice = append(allDice, p.Dice)
 	}
+	pillarFace := bid.Face
 	actual := CountFace(allDice, bid.Face)
+	if KindOf(bid) == BidKindPillar {
+		pillarFace, actual = MaxFaceCount(allDice)
+	}
 	bidTrue := actual >= bid.Quantity
 	winnerSeat := challengerSeat
 	loserSeat := bidderSeat
@@ -593,7 +602,7 @@ func (e *Engine) settleLocked(room *Room, bidderSeat, challengerSeat int) Event 
 	}
 	room.RoundResult = &RoundResult{
 		Round: room.Round, BidderSeat: bidderSeat, ChallengerSeat: challengerSeat, Bid: bid,
-		Actual: actual, BidTrue: bidTrue, WinnerSeat: winnerSeat, LoserSeat: loserSeat,
+		Actual: actual, BidTrue: bidTrue, PillarFace: pillarFace, WinnerSeat: winnerSeat, LoserSeat: loserSeat,
 		Deltas: deltas, Reveal: reveal,
 	}
 	room.Status = StatusRound
@@ -651,7 +660,7 @@ func (e *Engine) viewLocked(room *Room, openid string) *View {
 		if p.Left {
 			diceCount = 0
 		} else if diceCount == 0 {
-			diceCount = cfg.DicePerPlayer
+			diceCount = ClampDice(room.DicePerPlayer)
 		}
 		var dice []int
 		if reveal && !p.Left {
@@ -664,7 +673,8 @@ func (e *Engine) viewLocked(room *Room, openid string) *View {
 		})
 	}
 	return &View{
-		RoomID: room.RoomID, Mode: room.Mode, ModeName: cfg.Name, HostOpenID: room.HostOpenID,
+		RoomID: room.RoomID, Mode: room.Mode, ModeName: cfg.Name, DicePerPlayer: ClampDice(room.DicePerPlayer),
+		MaxPlayers: cfg.MaxPlayers, HostOpenID: room.HostOpenID,
 		Status: room.Status, Round: room.Round, TargetScore: room.TargetScore, TurnSeat: room.TurnSeat,
 		Bid: room.Bid, MySeat: mySeat, MyDice: myDice, Players: players,
 		RoundResult: room.RoundResult, MatchResult: room.MatchResult,
@@ -694,7 +704,7 @@ func (e *Engine) PublicRooms() []PublicRoom {
 		}
 		cfg := GetMode(room.Mode)
 		out = append(out, PublicRoom{
-			RoomID: room.RoomID, Mode: room.Mode, ModeName: cfg.Name,
+			RoomID: room.RoomID, Mode: room.Mode, ModeName: cfg.Name, DicePerPlayer: ClampDice(room.DicePerPlayer),
 			Count: e.activeCountLocked(room), MaxPlayers: cfg.MaxPlayers, Status: room.Status,
 		})
 	}

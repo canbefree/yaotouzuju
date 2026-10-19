@@ -5,16 +5,16 @@ import Taro from '@tarojs/taro'
 import Dice from '../../components/Dice'
 import NavBar from '../../components/NavBar'
 import Background from '../../components/Background'
+import BidPicker from '../../components/BidPicker'
 import {
   aiAction,
   challenge,
   createLocalGame,
-  isValidRaise,
-  minFirstQuantity,
   nextRound,
   placeBid,
   type LocalState
 } from '../../game/localGame'
+import { bidFull, type BidChoice } from '../../game/bid'
 import './index.scss'
 
 type Phase = 'menu' | 'game' | 'records'
@@ -36,13 +36,32 @@ export default function Local() {
   const [dice, setDice] = useState(5)
   const [target, setTarget] = useState(100)
   const [showBid, setShowBid] = useState(false)
-  const [qty, setQty] = useState(1)
-  const [face, setFace] = useState(1)
+  const [rolling, setRolling] = useState(false)
+  const [rollDice, setRollDice] = useState<number[]>([])
   const [records, setRecords] = useState<RecordRow[]>([])
 
   const me = game?.players.find((p) => p.seat === 0)
   const isMyTurn = !!game && game.status === 'playing' && game.turn === 0
-  const minQty = game?.bid ? game.bid.quantity : game ? minFirstQuantity(game.players.length) : 1
+  const myDice = game?.players[0]?.dice || []
+  const myHiFace = game?.bid && game.bid.kind !== 'pillar' && game.status === 'playing' ? game.bid.face : 0
+  const myBaozi = !!game && game.status === 'playing' && myDice.length > 1 && myDice.every((d) => d === myDice[0])
+
+  // 新一轮摇骰动画
+  useEffect(() => {
+    if (!game || game.status !== 'playing') return
+    const per = game.dicePerPlayer
+    let ticks = 0
+    setRolling(true)
+    const timer = setInterval(() => {
+      setRollDice(Array.from({ length: per }, () => 1 + Math.floor(Math.random() * 6)))
+      ticks += 1
+      if (ticks >= 8) {
+        clearInterval(timer)
+        setRolling(false)
+      }
+    }, 70)
+    return () => clearInterval(timer)
+  }, [game?.round])
 
   // AI 自动行动
   useEffect(() => {
@@ -53,7 +72,7 @@ export default function Local() {
       setGame((g) => {
         if (!g || g.status !== 'playing') return g
         const action = aiAction(g)
-        return action.type === 'challenge' ? challenge(g, g.turn) : placeBid(g, g.turn, action.quantity, action.face)
+        return action.type === 'challenge' ? challenge(g, g.turn) : placeBid(g, g.turn, action.kind, action.quantity, action.face)
       })
     }, 900 + Math.random() * 700)
     return () => clearTimeout(timer)
@@ -84,13 +103,9 @@ export default function Local() {
     setPhase('game')
   }
 
-  const doBid = () => {
+  const doBid = (choice: BidChoice) => {
     if (!game) return
-    if (!isValidRaise(game.bid, qty, face, game.players.length)) {
-      Taro.showToast({ title: '叫点要大于上家', icon: 'none' })
-      return
-    }
-    setGame(placeBid(game, 0, qty, face))
+    setGame(placeBid(game, 0, choice.kind, choice.quantity, choice.face))
     setShowBid(false)
   }
 
@@ -100,13 +115,6 @@ export default function Local() {
 
   const onNext = () => {
     if (game) setGame(nextRound(game))
-  }
-
-  const openBid = () => {
-    if (!game) return
-    setQty(game.bid ? game.bid.quantity : minQty)
-    setFace(game.bid ? (game.bid.face < 6 ? game.bid.face + 1 : 6) : 1)
-    setShowBid(true)
   }
 
   const opponents = useMemo(() => (game ? game.players.filter((p) => p.seat !== 0) : []), [game])
@@ -195,7 +203,7 @@ export default function Local() {
             <Text className="local-seat-score">{p.score}</Text>
             <View className="local-seat-dice">
               {p.dice.map((d, i) => (
-                <Dice key={i} value={game.status === 'roundEnd' ? d : 0} size={32} dim={game.status !== 'roundEnd'} />
+                <Dice key={i} value={game.status === 'roundEnd' ? d : 0} size={34} />
               ))}
             </View>
           </View>
@@ -203,8 +211,11 @@ export default function Local() {
       </View>
 
       <View className="local-center">
-        <Text className="local-bid-value">{game.bid ? `${game.bid.quantity} 个 ${game.bid.face}` : '等待叫点'}</Text>
-        <Text className="local-turn">
+        <View key={game.bid ? `${game.bid.seat}-${game.bid.kind}-${game.bid.quantity}-${game.bid.face}` : 'none'} className={`local-bid ${game.bid ? 'bid-pop' : ''}`}>
+          {game.bid?.kind === 'pillar' ? <View className="pillar-badge">柱</View> : null}
+          <Text className="local-bid-value">{game.bid ? bidFull(game.bid) : '等待叫点'}</Text>
+        </View>
+        <Text className={`local-turn ${isMyTurn ? 'turn-mine' : ''}`}>
           {game.status === 'playing'
             ? isMyTurn
               ? '轮到你了'
@@ -218,8 +229,14 @@ export default function Local() {
           <Text>我（{me?.score ?? 0} 分）</Text>
         </View>
         <View className="local-me-dice">
-          {game.players[0].dice.map((d, i) => (
-            <Dice key={i} value={d} size={78} />
+          {myDice.map((d, i) => (
+            <Dice
+              key={i}
+              value={rolling ? rollDice[i] || d : d}
+              size={88}
+              rolling={rolling}
+              variant={myBaozi ? 'glow' : d === myHiFace ? 'selected' : 'normal'}
+            />
           ))}
         </View>
       </View>
@@ -227,10 +244,10 @@ export default function Local() {
       <View className="local-actions">
         {game.status === 'playing' ? (
           <>
-            <View className={`btn btn-amber local-act ${isMyTurn ? '' : 'btn-disabled'}`} onClick={() => isMyTurn && openBid()}>
+            <View className={`btn btn-amber local-act ${isMyTurn ? 'act-glow' : 'btn-disabled'}`} onClick={() => isMyTurn && setShowBid(true)}>
               叫点数
             </View>
-            <View className={`btn btn-blue local-act ${isMyTurn && game.bid ? '' : 'btn-disabled'}`} onClick={() => isMyTurn && game.bid && doChallenge()}>
+            <View className={`btn btn-blue local-act ${isMyTurn && game.bid ? 'act-glow-blue' : 'btn-disabled'}`} onClick={() => isMyTurn && game.bid && doChallenge()}>
               吹牛
             </View>
           </>
@@ -241,34 +258,14 @@ export default function Local() {
         )}
       </View>
 
-      {showBid ? (
-        <View className="overlay" onClick={() => setShowBid(false)}>
-          <View className="sheet" onClick={(e) => e.stopPropagation()}>
-            <Text className="sheet-title">叫点数</Text>
-            <Text className="sheet-label">数量（至少 {minQty}）</Text>
-            <View className="stepper">
-              <View className="stepper-btn" onClick={() => setQty((q) => Math.max(minQty, q - 1))}>
-                −
-              </View>
-              <Text className="stepper-value">{qty}</Text>
-              <View className="stepper-btn" onClick={() => setQty((q) => q + 1)}>
-                +
-              </View>
-            </View>
-            <Text className="sheet-label">点数</Text>
-            <View className="face-row">
-              {[1, 2, 3, 4, 5, 6].map((f) => (
-                <View key={f} className={`face-item ${f === face ? 'face-item-on' : ''}`} onClick={() => setFace(f)}>
-                  <Dice value={f} size={56} />
-                </View>
-              ))}
-            </View>
-            <View className="btn btn-primary sheet-confirm" onClick={doBid}>
-              确认叫 {qty} 个 {face}
-            </View>
-          </View>
-        </View>
-      ) : null}
+      <BidPicker
+        visible={showBid}
+        prev={game.bid}
+        playerCount={game.players.length}
+        totalDice={game.players.length * game.dicePerPlayer}
+        onClose={() => setShowBid(false)}
+        onConfirm={doBid}
+      />
 
       {game.status === 'roundEnd' && game.result ? (
         <View className="overlay">
@@ -279,15 +276,26 @@ export default function Local() {
             <Text className="local-result-winner">
               🏆 {game.players.find((p) => p.seat === game.result!.winnerSeat)?.name} 胜
             </Text>
-            <Text className="local-result-line">
-              实际共 {game.result.actual} 个 {game.result.bid.face} → 叫点{game.result.bidTrue ? '成立' : '不成立'}
+            <Text className={`local-result-line ${game.result.bidTrue ? 'good' : 'bad'}`}>
+              {game.result.bid.kind === 'pillar'
+                ? `全场最多 ${game.result.pillarFace} 点 ×${game.result.actual} → ${game.result.bid.quantity} 柱${game.result.bidTrue ? '成立' : '不成立'}`
+                : `实际共 ${game.result.actual} 个 ${game.result.bid.face} → 叫点${game.result.bidTrue ? '成立' : '不成立'}`}
             </Text>
             {game.result.reveal.map((r) => (
               <View key={r.seat} className="local-result-row">
                 <Text className="local-result-name">{r.name}</Text>
                 <View className="local-result-dice">
                   {r.dice.map((d, i) => (
-                    <Dice key={i} value={d} size={36} />
+                    <Dice
+                      key={i}
+                      value={d}
+                      size={38}
+                      variant={
+                        game.result && d === (game.result.bid.kind === 'pillar' ? game.result.pillarFace : game.result.bid.face)
+                          ? 'selected'
+                          : 'normal'
+                      }
+                    />
                   ))}
                 </View>
               </View>

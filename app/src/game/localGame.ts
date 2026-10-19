@@ -1,4 +1,6 @@
-/** 本地单机玩法（客户端权威）：与线上同一套吹牛骰规则，含 AI 决策。 */
+/** 本地单机玩法（客户端权威）：与线上同一套吹牛骰规则（含叫柱），含 AI 决策。 */
+
+export type BidKind = 'point' | 'pillar'
 
 export interface LocalPlayer {
   seat: number
@@ -11,7 +13,9 @@ export interface LocalPlayer {
 
 export interface Bid {
   seat: number
+  kind: BidKind
   quantity: number
+  /** 柱时为 0 */
   face: number
 }
 
@@ -21,6 +25,7 @@ export interface RoundResult {
   bid: Bid
   actual: number
   bidTrue: boolean
+  pillarFace: number
   winnerSeat: number
   loserSeat: number
   deltas: { seat: number; delta: number; score: number }[]
@@ -59,13 +64,38 @@ function countFace(players: LocalPlayer[], face: number): number {
   return n
 }
 
+/** 全场出现次数最多的点数及其次数（叫柱的判定依据）。 */
+function maxFaceCount(players: LocalPlayer[]): { face: number; count: number } {
+  let face = 1
+  let count = 0
+  for (let f = 1; f <= 6; f += 1) {
+    const c = countFace(players, f)
+    if (c > count) {
+      face = f
+      count = c
+    }
+  }
+  return { face, count }
+}
+
 export function minFirstQuantity(playerCount: number): number {
   return Math.max(1, Math.floor(playerCount / 2))
 }
 
-export function isValidRaise(bid: Bid | null, q: number, f: number, playerCount: number): boolean {
-  if (f < 1 || f > 6 || q < 1) return false
+export function minPillarQuantity(prevQuantity: number): number {
+  return Math.max(1, prevQuantity - 1)
+}
+
+export function isValidRaise(bid: Bid | null, kind: BidKind, q: number, f: number, playerCount: number): boolean {
+  if (q < 1) return false
+  if (kind === 'pillar') {
+    if (!bid) return false
+    if (bid.kind === 'pillar') return q > bid.quantity
+    return q >= minPillarQuantity(bid.quantity)
+  }
+  if (f < 1 || f > 6) return false
   if (!bid) return q >= minFirstQuantity(playerCount)
+  if (bid.kind === 'pillar') return false
   if (q > bid.quantity) return true
   if (q === bid.quantity && f > bid.face) return true
   return false
@@ -113,23 +143,32 @@ export function startRound(s: LocalState): LocalState {
 
 export function nextRound(s: LocalState): LocalState {
   if (s.winnerSeat !== null) {
-    // 新的一局：清零分数
     const players = s.players.map((p) => ({ ...p, score: 0 }))
     return startRound({ ...s, players, round: 0 })
   }
   return startRound(s)
 }
 
-export function placeBid(s: LocalState, seat: number, quantity: number, face: number): LocalState {
+export function placeBid(s: LocalState, seat: number, kind: BidKind, quantity: number, face: number): LocalState {
   if (s.status !== 'playing' || s.turn !== seat) return s
-  if (!isValidRaise(s.bid, quantity, face, s.players.length)) return s
-  return { ...s, bid: { seat, quantity, face }, turn: (seat + 1) % s.players.length }
+  if (!isValidRaise(s.bid, kind, quantity, face, s.players.length)) return s
+  return {
+    ...s,
+    bid: { seat, kind, quantity, face: kind === 'pillar' ? 0 : face },
+    turn: (seat + 1) % s.players.length
+  }
 }
 
 export function challenge(s: LocalState, seat: number): LocalState {
   if (s.status !== 'playing' || s.turn !== seat || !s.bid) return s
   const bid = s.bid
-  const actual = countFace(s.players, bid.face)
+  let actual = countFace(s.players, bid.face)
+  let pillarFace = bid.face
+  if (bid.kind === 'pillar') {
+    const m = maxFaceCount(s.players)
+    pillarFace = m.face
+    actual = m.count
+  }
   const bidTrue = actual >= bid.quantity
   const winnerSeat = bidTrue ? bid.seat : seat
   const loserSeat = bidTrue ? seat : bid.seat
@@ -143,6 +182,7 @@ export function challenge(s: LocalState, seat: number): LocalState {
     bid,
     actual,
     bidTrue,
+    pillarFace,
     winnerSeat,
     loserSeat,
     deltas: players.map((p) => ({ seat: p.seat, delta: p.seat === winnerSeat ? SCORE_WIN : SCORE_LOSE, score: p.score })),
@@ -153,37 +193,47 @@ export function challenge(s: LocalState, seat: number): LocalState {
   return { ...s, players, status: 'roundEnd', result, winnerSeat: winnerSeatFinal }
 }
 
+export type AIAction =
+  | { type: 'bid'; kind: BidKind; quantity: number; face: number }
+  | { type: 'challenge' }
+
 /** AI 决策：基于已知自己的骰子 + 未知骰子的期望值。 */
-export function aiAction(s: LocalState): { type: 'bid'; quantity: number; face: number } | { type: 'challenge' } {
+export function aiAction(s: LocalState): AIAction {
   const me = s.players.find((p) => p.seat === s.turn)!
   const others = s.players.filter((p) => p.seat !== s.turn).length * s.dicePerPlayer
   const bid = s.bid
 
   const estimate = (face: number) => me.dice.filter((d) => d === face).length + others / 6
+  const fav = favoriteFace(me.dice)
+  const favCount = me.dice.filter((d) => d === fav).length
+  const maxSame = favCount + others / 6
 
   if (bid) {
-    // 上家叫得离谱 → 开
-    if (bid.quantity > estimate(bid.face) + 0.9) {
+    if (bid.kind === 'pillar') {
+      const need = bid.quantity + 1
+      if (need <= maxSame + 0.8) return { type: 'bid', kind: 'pillar', quantity: need, face: 0 }
       return { type: 'challenge' }
     }
-    // 尝试同数量抬点数
+    if (bid.quantity > estimate(bid.face) + 0.9) return { type: 'challenge' }
+    // 手里同点多，转喊柱（可从 数量-1 起）
+    const minPillar = minPillarQuantity(bid.quantity)
+    if (maxSame >= minPillar + 1.2) {
+      return { type: 'bid', kind: 'pillar', quantity: minPillar, face: 0 }
+    }
     for (let f = bid.face + 1; f <= 6; f += 1) {
       if (bid.quantity <= estimate(f) + 1.2) {
-        return { type: 'bid', quantity: bid.quantity, face: f }
+        return { type: 'bid', kind: 'point', quantity: bid.quantity, face: f }
       }
     }
-    // 加数量
     const q = bid.quantity + 1
-    const myFavorite = favoriteFace(me.dice)
-    if (q <= estimate(myFavorite) + 1.2) {
-      return { type: 'bid', quantity: q, face: myFavorite }
+    if (q <= estimate(fav) + 1.2) {
+      return { type: 'bid', kind: 'point', quantity: q, face: fav }
     }
     return { type: 'challenge' }
   }
 
-  const favorite = favoriteFace(me.dice)
-  const q = Math.max(minFirstQuantity(s.players.length), Math.floor(estimate(favorite)))
-  return { type: 'bid', quantity: Math.max(1, q), face: favorite }
+  const q = Math.max(minFirstQuantity(s.players.length), Math.floor(estimate(fav)))
+  return { type: 'bid', kind: 'point', quantity: Math.max(1, q), face: fav }
 }
 
 function favoriteFace(dice: number[]): number {
