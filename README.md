@@ -88,6 +88,13 @@ SQLite 在 `/opt/yaotou/data/yaotou.db`，前端静态文件在 `/opt/yaotou/pub
 ./deploy.sh tyun       # 指定主机
 ```
 
+推送代码到 GitHub（本机直连 GitHub 不稳时，`push.sh` 会自动借 tyun 的 SOCKS 隧道）：
+
+```bash
+./push.sh              # = git push；直连失败自动改用隧道
+./push.sh origin main  # 透传参数给 git push
+```
+
 手动部署要点：
 
 ```bash
