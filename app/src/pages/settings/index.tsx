@@ -3,6 +3,7 @@ import { View, Text, Input, Switch } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 
 import NavBar from '../../components/NavBar'
+import Background from '../../components/Background'
 import { api } from '../../api/client'
 import type { ScoreRow } from '../../api/types'
 import { getProfile, logout, updateNickname } from '../../store/session'
@@ -65,6 +66,7 @@ export default function Settings() {
 
   return (
     <View className="page page-paper settings">
+      <Background tone="paper" />
       <NavBar title="设置" />
       <View className="settings-body">
         <View className="card settings-card">

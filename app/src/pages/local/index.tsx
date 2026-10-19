@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro'
 
 import Dice from '../../components/Dice'
 import NavBar from '../../components/NavBar'
+import Background from '../../components/Background'
 import {
   aiAction,
   challenge,
@@ -113,6 +114,7 @@ export default function Local() {
   if (phase === 'menu') {
     return (
       <View className="page page-paper local">
+        <Background tone="paper" />
         <NavBar title="本地单机" />
         <View className="local-body">
           <View className="local-hero">
@@ -155,6 +157,7 @@ export default function Local() {
   if (phase === 'records') {
     return (
       <View className="page page-paper local">
+        <Background tone="paper" />
         <NavBar title="游戏记录" onBack={() => setPhase('menu')} />
         <View className="local-body">
           {records.length === 0 ? (
@@ -181,6 +184,7 @@ export default function Local() {
 
   return (
     <View className="page local local-table">
+      <Background />
       <NavBar title="本地对局" onBack={() => setPhase('menu')} />
 
       <View className="local-opps">

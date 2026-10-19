@@ -37,11 +37,16 @@ input {
 }
 
 .page-wood {
-  background: linear-gradient(180deg, #b07b45 0%, #9a6738 40%, #7d4f28 100%);
+  background: transparent;
 }
 
 .page-paper {
-  background: linear-gradient(180deg, #fdf6ea 0%, #f6e6cc 100%);
+  background: transparent;
+}
+
+/* H5 页面根容器默认白底，置为透明以便露出背景层 */
+.taro_page {
+  background: transparent;
 }
 
 .fill {

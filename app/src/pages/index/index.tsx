@@ -2,6 +2,7 @@ import { View, Text, Image } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 
 import logo from '../../assets/logo.png'
+import Background from '../../components/Background'
 import './index.scss'
 
 export default function Home() {
@@ -14,6 +15,7 @@ export default function Home() {
 
   return (
     <View className="page page-wood home">
+      <Background />
       <View className="home-settings" onClick={() => go('/pages/settings/index')}>
         <Text>⚙️</Text>
       </View>

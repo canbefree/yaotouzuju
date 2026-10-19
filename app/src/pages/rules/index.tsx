@@ -2,6 +2,7 @@ import { View, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 
 import NavBar from '../../components/NavBar'
+import Background from '../../components/Background'
 import './index.scss'
 
 const RULES = [
@@ -17,6 +18,7 @@ const RULES = [
 export default function Rules() {
   return (
     <View className="page page-paper rules">
+      <Background tone="paper" />
       <NavBar title="游戏玩法" />
       <View className="rules-body">
         <View className="rules-hero">

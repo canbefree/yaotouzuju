@@ -4,6 +4,7 @@ import Taro, { useDidShow } from '@tarojs/taro'
 
 import Dice from '../../components/Dice'
 import NavBar from '../../components/NavBar'
+import Background from '../../components/Background'
 import { ApiError } from '../../api/client'
 import { getProfile } from '../../store/session'
 import { room, subscribeRoom, getRoom, type RoomState } from '../../store/roomStore'
@@ -93,6 +94,7 @@ export default function Room() {
   if (!view) {
     return (
       <View className="page page-wood room">
+        <Background />
         <NavBar title="对局" onBack={onLeave} />
         <View className="room-empty">
           <Text>还没有进入房间</Text>
@@ -109,6 +111,7 @@ export default function Room() {
 
   return (
     <View className="page room">
+      <Background />
       <NavBar
         title={`房间 ${view.roomId}`}
         onBack={onLeave}

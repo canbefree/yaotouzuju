@@ -3,6 +3,7 @@ import { View, Text, Input } from '@tarojs/components'
 import Taro, { useDidShow } from '@tarojs/taro'
 
 import NavBar from '../../components/NavBar'
+import Background from '../../components/Background'
 import { api, ApiError } from '../../api/client'
 import type { ModeConfig, ModeId, PublicRoom } from '../../api/types'
 import { room } from '../../store/roomStore'
@@ -65,6 +66,7 @@ export default function Lobby() {
 
   return (
     <View className="page page-paper lobby">
+      <Background tone="paper" />
       <NavBar title="在线游戏" />
       <View className="lobby-body">
         <View className="lobby-banner">
