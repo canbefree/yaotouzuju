@@ -1,11 +1,11 @@
 import { View, Image } from '@tarojs/components'
 
-import normalSheet from '../../assets/dice/normal.png'
-import selectedSheet from '../../assets/dice/selected.png'
-import glowSheet from '../../assets/dice/glow.png'
+import normalSheet from '../../assets/dice/normal-v3.png'
+import goldSheet from '../../assets/dice/gold-v3.png'
+import rainbowSheet from '../../assets/dice/rainbow-v3.png'
 import './index.scss'
 
-export type DiceVariant = 'normal' | 'selected' | 'glow'
+export type DiceVariant = 'normal' | 'pick' | 'effect'
 
 interface Props {
   /** 1~6；0 表示盖着（或隐藏）的骰子背面 */
@@ -15,14 +15,15 @@ interface Props {
   dim?: boolean
   /** 滚动中：轻微抖动 */
   rolling?: boolean
-  /** 场景样式：普通 / 选中（金色描边 + 微浮起）/ 加强特效（彩色辉光） */
+  /** 场景样式：普通 / 命中（彩虹环）/ 豹子特效（金色描边） */
   variant?: DiceVariant
 }
 
+// 样式对应：pick（命中的骰子）用彩虹环，effect（豹子特效）用金色描边
 const SHEETS: Record<DiceVariant, string> = {
   normal: normalSheet,
-  selected: selectedSheet,
-  glow: glowSheet
+  pick: rainbowSheet,
+  effect: goldSheet
 }
 
 /** 设计稿 px（750 宽）→ rem，和 Taro 的 pxtransform 保持一致（除以 40）。 */

@@ -29,40 +29,40 @@ func TestIsValidRaisePoints(t *testing.T) {
 }
 
 func TestPillarEntryAndLadder(t *testing.T) {
-	// 柱不能首叫
+	// 斋不能首叫
 	if IsValidRaise(nil, BidKindPillar, 1, 0, 4) {
-		t.Fatalf("柱不能首叫")
+		t.Fatalf("斋不能首叫")
 	}
 	prev := &Bid{Kind: BidKindPoint, Quantity: 4, Face: 2}
-	// 现在是 4 个 → 可喊 3 柱（数量-1）
+	// 现在是 4 个 → 可喊 3 斋（数量-1）
 	if !IsValidRaise(prev, BidKindPillar, 3, 0, 4) {
-		t.Fatalf("4 个之后应可喊 3 柱")
+		t.Fatalf("4 个之后应可喊 3 斋")
 	}
 	if !IsValidRaise(prev, BidKindPillar, 4, 0, 4) {
-		t.Fatalf("4 个之后喊 4 柱也应合法")
+		t.Fatalf("4 个之后喊 4 斋也应合法")
 	}
 	if IsValidRaise(prev, BidKindPillar, 2, 0, 4) {
-		t.Fatalf("低于 数量-1 的柱应不合法")
+		t.Fatalf("低于 数量-1 的斋应不合法")
 	}
-	// 现在是 5 个 → 可喊 4 柱
+	// 现在是 5 个 → 可喊 4 斋
 	prev5 := &Bid{Kind: BidKindPoint, Quantity: 5, Face: 1}
 	if !IsValidRaise(prev5, BidKindPillar, 4, 0, 4) {
-		t.Fatalf("5 个之后应可喊 4 柱")
+		t.Fatalf("5 个之后应可喊 4 斋")
 	}
 	if IsValidRaise(prev5, BidKindPillar, 3, 0, 4) {
-		t.Fatalf("5 个之后 3 柱应不合法")
+		t.Fatalf("5 个之后 3 斋应不合法")
 	}
 
-	// 柱之后只能继续加柱
+	// 斋之后只能继续加斋
 	pillar := &Bid{Kind: BidKindPillar, Quantity: 3}
 	if !IsValidRaise(pillar, BidKindPillar, 4, 0, 4) {
-		t.Fatalf("柱之后应可加柱")
+		t.Fatalf("斋之后应可加斋")
 	}
 	if IsValidRaise(pillar, BidKindPillar, 3, 0, 4) {
-		t.Fatalf("柱数未增加应不合法")
+		t.Fatalf("斋数未增加应不合法")
 	}
 	if IsValidRaise(pillar, BidKindPoint, 9, 6, 4) {
-		t.Fatalf("柱之后不能回普通叫点")
+		t.Fatalf("斋之后不能回普通叫点")
 	}
 }
 
@@ -79,12 +79,12 @@ func TestMaxFaceCount(t *testing.T) {
 
 func TestMinPillarQuantity(t *testing.T) {
 	if got := MinPillarQuantity(4); got != 3 {
-		t.Fatalf("4 → 3 柱，得到 %d", got)
+		t.Fatalf("4 → 3 斋，得到 %d", got)
 	}
 	if got := MinPillarQuantity(5); got != 4 {
-		t.Fatalf("5 → 4 柱，得到 %d", got)
+		t.Fatalf("5 → 4 斋，得到 %d", got)
 	}
 	if got := MinPillarQuantity(1); got != 1 {
-		t.Fatalf("1 → 1 柱，得到 %d", got)
+		t.Fatalf("1 → 1 斋，得到 %d", got)
 	}
 }

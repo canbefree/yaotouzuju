@@ -2,7 +2,7 @@ package game
 
 import "testing"
 
-// TestPillarSettlement 端到端验证「柱」的叫点、结算与判定。
+// TestPillarSettlement 端到端验证「斋」的叫点、结算与判定。
 func TestPillarSettlement(t *testing.T) {
 	e := NewEngine()
 	id, err := e.Create(ModeClassic, 5, UserInfo{OpenID: "a", Nickname: "A"})
@@ -31,7 +31,7 @@ func TestPillarSettlement(t *testing.T) {
 	if _, err := e.Bid(id, "a", BidKindPoint, 4, 2); err != nil {
 		t.Fatalf("point bid: %v", err)
 	}
-	// 4 个 → 可喊 3 柱
+	// 4 个 → 可喊 3 斋
 	if _, err := e.Bid(id, "b", BidKindPillar, 3, 0); err != nil {
 		t.Fatalf("pillar bid: %v", err)
 	}
@@ -44,20 +44,20 @@ func TestPillarSettlement(t *testing.T) {
 		t.Fatalf("应有结算结果")
 	}
 	if KindOf(rr.Bid) != BidKindPillar || rr.Bid.Quantity != 3 {
-		t.Fatalf("结算叫点应为 3 柱，得到 %+v", rr.Bid)
+		t.Fatalf("结算叫点应为 3 斋，得到 %+v", rr.Bid)
 	}
 	if rr.Actual != 4 || rr.PillarFace != 2 {
 		t.Fatalf("最大同点应为 2 点 ×4，得到 face=%d count=%d", rr.PillarFace, rr.Actual)
 	}
 	if !rr.BidTrue {
-		t.Fatalf("4 ≥ 3，柱应成立（质疑者输）")
+		t.Fatalf("4 ≥ 3，斋应成立（质疑者输）")
 	}
 	if rr.WinnerSeat != 1 || rr.LoserSeat != 0 {
-		t.Fatalf("赢家应为叫柱者(seat1)，得到 winner=%d loser=%d", rr.WinnerSeat, rr.LoserSeat)
+		t.Fatalf("赢家应为叫斋者(seat1)，得到 winner=%d loser=%d", rr.WinnerSeat, rr.LoserSeat)
 	}
 }
 
-// TestPillarTooHigh 柱数高于全场最大同点数时应不成立。
+// TestPillarTooHigh 斋数高于全场最大同点数时应不成立。
 func TestPillarTooHigh(t *testing.T) {
 	e := NewEngine()
 	id, _ := e.Create(ModeClassic, 5, UserInfo{OpenID: "a"})
@@ -70,7 +70,7 @@ func TestPillarTooHigh(t *testing.T) {
 	room.Players[1].Dice = []int{1, 2, 3, 4, 5}
 	room.TurnSeat = 0
 
-	// 最大同点数只有 2（1 与 2 各 2 颗）→ 喊 4 柱必输
+	// 最大同点数只有 2（1 与 2 各 2 颗）→ 喊 4 斋必输
 	if _, err := e.Bid(id, "a", BidKindPoint, 5, 1); err != nil {
 		t.Fatalf("point bid: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestPillarTooHigh(t *testing.T) {
 	}
 	rr := e.rooms[id].RoundResult
 	if rr.BidTrue {
-		t.Fatalf("最大同点 2 < 4，柱应不成立")
+		t.Fatalf("最大同点 2 < 4，斋应不成立")
 	}
 	if rr.WinnerSeat != 0 {
 		t.Fatalf("质疑者(seat0)应赢，得到 winner=%d", rr.WinnerSeat)

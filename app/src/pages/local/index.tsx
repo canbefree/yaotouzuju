@@ -212,7 +212,7 @@ export default function Local() {
 
       <View className="local-center">
         <View key={game.bid ? `${game.bid.seat}-${game.bid.kind}-${game.bid.quantity}-${game.bid.face}` : 'none'} className={`local-bid ${game.bid ? 'bid-pop' : ''}`}>
-          {game.bid?.kind === 'pillar' ? <View className="pillar-badge">柱</View> : null}
+          {game.bid?.kind === 'pillar' ? <View className="pillar-badge">斋</View> : null}
           <Text className="local-bid-value">{game.bid ? bidFull(game.bid) : '等待叫点'}</Text>
         </View>
         <Text className={`local-turn ${isMyTurn ? 'turn-mine' : ''}`}>
@@ -235,7 +235,7 @@ export default function Local() {
               value={rolling ? rollDice[i] || d : d}
               size={128}
               rolling={rolling}
-              variant={myBaozi ? 'glow' : d === myHiFace ? 'selected' : 'normal'}
+              variant={myBaozi ? 'effect' : d === myHiFace ? 'pick' : 'normal'}
             />
           ))}
         </View>
@@ -278,7 +278,7 @@ export default function Local() {
             </Text>
             <Text className={`local-result-line ${game.result.bidTrue ? 'good' : 'bad'}`}>
               {game.result.bid.kind === 'pillar'
-                ? `全场最多 ${game.result.pillarFace} 点 ×${game.result.actual} → ${game.result.bid.quantity} 柱${game.result.bidTrue ? '成立' : '不成立'}`
+                ? `全场最多 ${game.result.pillarFace} 点 ×${game.result.actual} → ${game.result.bid.quantity} 斋${game.result.bidTrue ? '成立' : '不成立'}`
                 : `实际共 ${game.result.actual} 个 ${game.result.bid.face} → 叫点${game.result.bidTrue ? '成立' : '不成立'}`}
             </Text>
             {game.result.reveal.map((r) => (
@@ -292,7 +292,7 @@ export default function Local() {
                       size={55}
                       variant={
                         game.result && d === (game.result.bid.kind === 'pillar' ? game.result.pillarFace : game.result.bid.face)
-                          ? 'selected'
+                          ? 'pick'
                           : 'normal'
                       }
                     />

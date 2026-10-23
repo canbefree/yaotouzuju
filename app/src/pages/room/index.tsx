@@ -184,9 +184,9 @@ export default function Room() {
           </View>
         ) : (
           <View key={view.bid?.at || 0} className={`room-bidcard ${view.bid ? 'bid-pop' : ''} ${isPillar ? 'bidcard-pillar' : ''}`}>
-            <Text className="room-bidcard-label">{isPillar ? '当前叫柱' : '当前叫点'}</Text>
+            <Text className="room-bidcard-label">{isPillar ? '当前叫斋' : '当前叫点'}</Text>
             <View className="room-bidcard-row">
-              {isPillar ? <View className="pillar-badge">柱</View> : null}
+              {isPillar ? <View className="pillar-badge">斋</View> : null}
               <Text className="room-bidcard-value">{view.bid ? bidFull(view.bid) : '等待叫点'}</Text>
             </View>
             <Text className="room-bidcard-by">
@@ -222,7 +222,7 @@ export default function Room() {
                   value={rolling ? rollDice[i] || d : d}
                   size={128}
                   rolling={rolling}
-                  variant={myBaozi ? 'glow' : d === myHiFace ? 'selected' : 'normal'}
+                  variant={myBaozi ? 'effect' : d === myHiFace ? 'pick' : 'normal'}
                 />
               ))}
         </View>
@@ -336,7 +336,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
             </Text>
             <Text className={`result-reveal-line ${round.bidTrue ? 'good' : 'bad'}`}>
               {round.bid.kind === 'pillar'
-                ? `全场最多 ${round.pillarFace} 点 ×${round.actual} → ${round.bid.quantity} 柱${round.bidTrue ? '成立' : '不成立'}`
+                ? `全场最多 ${round.pillarFace} 点 ×${round.actual} → ${round.bid.quantity} 斋${round.bidTrue ? '成立' : '不成立'}`
                 : `实际共 ${round.actual} 个 ${round.bid.face} → 叫点${round.bidTrue ? '成立' : '不成立'}`}
             </Text>
             <View className="result-reveal-dice">
@@ -345,7 +345,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
                   <Text className="result-reveal-name">{r.nickname}</Text>
                   <View className="result-reveal-diceset">
                     {r.dice.map((d, i) => (
-                      <Dice key={i} value={d} size={66} variant={d === hitFace ? 'selected' : 'normal'} />
+                      <Dice key={i} value={d} size={66} variant={d === hitFace ? 'pick' : 'normal'} />
                     ))}
                   </View>
                 </View>

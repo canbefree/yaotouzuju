@@ -20,30 +20,15 @@
   gap: 16px;
 }
 
-.bid-tabs {
-  display: inline-flex;
-  padding: 6px;
-  border-radius: 999px;
-  background: rgba(138, 90, 52, 0.12);
-}
-
-.bid-tab {
-  padding: 12px 48px;
-  border-radius: 999px;
+.bid-mode-title {
   font-size: 30px;
-  font-weight: 700;
-  color: rgba(74, 53, 36, 0.55);
-  transition: all 0.18s ease;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: rgba(74, 53, 36, 0.85);
 }
 
-.bid-tab-on {
-  background: linear-gradient(180deg, #f7b34a 0%, #e8842a 100%);
-  color: #fff;
-  box-shadow: 0 4px 10px rgba(201, 106, 24, 0.4);
-}
-
-.bid-tab-off {
-  opacity: 0.35;
+.bid-mode-title.is-zhai {
+  color: #d98a13;
 }
 
 .bid-hint-text {
@@ -123,9 +108,31 @@
   box-shadow: 0 4px 0 #d98a13;
 }
 
-.bid-confirm {
+.bid-foot {
   margin-top: 24px;
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+}
+
+.bid-foot .bid-confirm {
+  margin-top: 0;
+  flex: 1;
+}
+
+.bid-foot.single .bid-confirm {
   width: 100%;
+}
+
+/* 斋：独立按钮，点击后本面板只能以斋继续（不可回退到点数） */
+.bid-zhai {
+  flex: 0 0 auto;
+  width: 140px;
+  background: linear-gradient(180deg, #ffd27a 0%, #f5a623 100%);
+  color: #7a4a06;
+  font-weight: 900;
+  font-size: 34px;
+  box-shadow: 0 4px 0 #d98a13;
 }
 
 @keyframes bid-pop {

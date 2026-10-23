@@ -1,4 +1,4 @@
-/** 本地单机玩法（客户端权威）：与线上同一套吹牛骰规则（含叫柱），含 AI 决策。 */
+/** 本地单机玩法（客户端权威）：与线上同一套吹牛骰规则（含叫斋），含 AI 决策。 */
 
 export type BidKind = 'point' | 'pillar'
 
@@ -15,7 +15,7 @@ export interface Bid {
   seat: number
   kind: BidKind
   quantity: number
-  /** 柱时为 0 */
+  /** 斋时为 0 */
   face: number
 }
 
@@ -64,7 +64,7 @@ function countFace(players: LocalPlayer[], face: number): number {
   return n
 }
 
-/** 全场出现次数最多的点数及其次数（叫柱的判定依据）。 */
+/** 全场出现次数最多的点数及其次数（叫斋的判定依据）。 */
 function maxFaceCount(players: LocalPlayer[]): { face: number; count: number } {
   let face = 1
   let count = 0
@@ -215,7 +215,7 @@ export function aiAction(s: LocalState): AIAction {
       return { type: 'challenge' }
     }
     if (bid.quantity > estimate(bid.face) + 0.9) return { type: 'challenge' }
-    // 手里同点多，转喊柱（可从 数量-1 起）
+    // 手里同点多，转喊斋（可从 数量-1 起）
     const minPillar = minPillarQuantity(bid.quantity)
     if (maxSame >= minPillar + 1.2) {
       return { type: 'bid', kind: 'pillar', quantity: minPillar, face: 0 }

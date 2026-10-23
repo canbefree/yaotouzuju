@@ -20,10 +20,10 @@ export type BidKind = 'point' | 'pillar'
 
 export interface Bid {
   seat: number
-  /** point＝普通叫点「N 个 X」；pillar＝叫柱「N 柱」（不限点数） */
+  /** point＝普通叫点「N 个 X」；pillar＝叫斋「N 斋」（不限点数） */
   kind: BidKind
   quantity: number
-  /** 柱时为 0 */
+  /** 斋时为 0 */
   face: number
   at: number
 }
@@ -48,7 +48,7 @@ export interface RoundResult {
   bid: Bid
   actual: number
   bidTrue: boolean
-  /** 柱结算时出现次数最多的点数（普通叫点时为叫的点数） */
+  /** 斋结算时出现次数最多的点数（普通叫点时为叫的点数） */
   pillarFace: number
   winnerSeat: number
   loserSeat: number

@@ -7,14 +7,14 @@ export interface BidLike {
   face: number
 }
 
-/** 叫点文案：`5个4` / `4柱`。 */
+/** 叫点文案：`5个4` / `4斋`。 */
 export function bidLabel(b: BidLike): string {
-  return b.kind === 'pillar' ? `${b.quantity}柱` : `${b.quantity}个${b.face}`
+  return b.kind === 'pillar' ? `${b.quantity}斋` : `${b.quantity}个${b.face}`
 }
 
-/** 带空格的宽版文案：`5 个 4` / `4 柱`。 */
+/** 带空格的宽版文案：`5 个 4` / `4 斋`。 */
 export function bidFull(b: BidLike): string {
-  return b.kind === 'pillar' ? `${b.quantity} 柱` : `${b.quantity} 个 ${b.face}`
+  return b.kind === 'pillar' ? `${b.quantity} 斋` : `${b.quantity} 个 ${b.face}`
 }
 
 export interface BidChoice {
@@ -28,12 +28,12 @@ export function minFirstQuantity(playerCount: number): number {
   return Math.max(1, Math.floor(playerCount / 2))
 }
 
-/** 柱之后不能再喊普通点。 */
+/** 斋之后不能再喊普通点。 */
 export function canPoint(prev: BidLike | null): boolean {
   return !prev || prev.kind !== 'pillar'
 }
 
-/** 柱只能在上家已叫点后喊。 */
+/** 斋只能在上家已叫点后喊。 */
 export function canPillar(prev: BidLike | null): boolean {
   return !!prev
 }
@@ -60,7 +60,7 @@ export function pointFaces(prev: BidLike | null, quantity: number): number[] {
   return out
 }
 
-/** 柱：可选柱数（升序）。普通叫点 Q 个之后从 Q-1 柱起；柱之后只能更大。 */
+/** 斋：可选斋数（升序）。普通叫点 Q 个之后从 Q-1 斋起；斋之后只能更大。 */
 export function pillarQuantities(prev: BidLike | null, totalDice: number): number[] {
   if (!prev) return []
   const min = prev.kind === 'pillar' ? prev.quantity + 1 : Math.max(1, prev.quantity - 1)

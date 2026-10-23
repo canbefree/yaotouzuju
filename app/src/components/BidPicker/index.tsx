@@ -29,7 +29,8 @@ const clamp = (i: number, n: number) => Math.max(0, Math.min(i, n - 1))
 const ITEM_H = 48
 
 /**
- * 叫点面板：用滚动选择（PickerView 滚轮）代替加减按钮，点数/柱两个 Tab。
+ * 叫点面板：用滚动选择（PickerView 滚轮）代替加减按钮。
+ * 默认喊点数；点「斋」后本面板锁定为斋模式，无法再回到点数（斋局只能继续加斋）。
  */
 export default function BidPicker({ visible, prev, playerCount, totalDice, onClose, onConfirm }: Props) {
   const [mode, setMode] = useState<'point' | 'pillar'>('point')
@@ -67,33 +68,23 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, onClo
     }
   }
 
-  const title = mode === 'point' ? `喊 ${qty} 个 ${face}` : `喊 ${pillar} 柱`
+  const title = mode === 'point' ? `喊 ${qty} 个 ${face}` : `喊 ${pillar} 斋`
+  const canSwitchToPillar = mode === 'point' && allowPillar
 
   return (
     <View className="overlay" onClick={onClose}>
       <View className="sheet bid-sheet" onClick={(e) => e.stopPropagation()}>
         <View className="bid-head">
-          <Text className="bid-tabs">
-            <Text
-              className={`bid-tab ${mode === 'point' ? 'bid-tab-on' : ''} ${allowPoint ? '' : 'bid-tab-off'}`}
-              onClick={() => allowPoint && setMode('point')}
-            >
-              点数
-            </Text>
-            <Text
-              className={`bid-tab ${mode === 'pillar' ? 'bid-tab-on' : ''} ${allowPillar ? '' : 'bid-tab-off'}`}
-              onClick={() => allowPillar && setMode('pillar')}
-            >
-              柱
-            </Text>
+          <Text className={`bid-mode-title ${mode === 'pillar' ? 'is-zhai' : ''}`}>
+            {mode === 'point' ? '叫点' : '叫斋'}
           </Text>
           <View className="bid-hint">
             <Text className="bid-hint-text">
               {mode === 'point'
                 ? allowPoint
                   ? '上滚＝加数量，下滚＝加点数'
-                  : '已有人喊柱，只能继续加柱'
-                : '全场至少有这么多骰子同点'}
+                  : '已有人喊斋，只能继续加斋'
+                : '全场至少有这么多骰子同点（喊斋后只能继续加斋）'}
             </Text>
           </View>
         </View>
@@ -122,19 +113,26 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, onClo
               <Text className="bid-preview-num">{qty}</Text>
               <Text className="bid-preview-unit">个</Text>
               <View className="bid-preview-dice">
-                <Dice value={face} size={110} variant="selected" />
+                <Dice value={face} size={110} variant="pick" />
               </View>
             </>
           ) : (
             <>
               <Text className="bid-preview-num gold">{pillar}</Text>
-              <View className="bid-pillar-badge">柱</View>
+              <View className="bid-pillar-badge">斋</View>
             </>
           )}
         </View>
 
-        <View className="btn btn-primary bid-confirm" onClick={confirm}>
-          {title}
+        <View className={`bid-foot ${canSwitchToPillar ? '' : 'single'}`}>
+          {canSwitchToPillar ? (
+            <View className="btn bid-zhai" onClick={() => setMode('pillar')}>
+              斋
+            </View>
+          ) : null}
+          <View className="btn btn-primary bid-confirm" onClick={confirm}>
+            {title}
+          </View>
         </View>
       </View>
     </View>

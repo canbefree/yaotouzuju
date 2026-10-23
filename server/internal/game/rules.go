@@ -91,7 +91,7 @@ func MinFirstQuantity(playerCount int) int {
 	return q
 }
 
-// MaxFaceCount 全场出现次数最多的点数及其次数（叫柱的判定依据）。
+// MaxFaceCount 全场出现次数最多的点数及其次数（叫斋的判定依据）。
 func MaxFaceCount(all [][]int) (face, count int) {
 	for f := 1; f <= DiceFaces; f++ {
 		if c := CountFace(all, f); c > count {
@@ -101,7 +101,7 @@ func MaxFaceCount(all [][]int) (face, count int) {
 	return face, count
 }
 
-// MinPillarQuantity 从「N 个 X」进入「柱」的最小柱数：数量减 1，最少 1 柱。
+// MinPillarQuantity 从「N 个 X」进入「斋」的最小斋数：数量减 1，最少 1 斋。
 func MinPillarQuantity(prevQuantity int) int {
 	q := prevQuantity - 1
 	if q < 1 {
@@ -111,8 +111,8 @@ func MinPillarQuantity(prevQuantity int) int {
 }
 
 // IsValidRaise 校验新叫点是否合法。
-//   - 普通叫点：数量更大（面值任意），或数量相同而面值更大；柱之后不可再叫普通点。
-//   - 柱：不能首叫；从普通叫点「Q 个 X」进入需 ≥ Q-1 柱；柱之后只能继续加柱。
+//   - 普通叫点：数量更大（面值任意），或数量相同而面值更大；斋之后不可再叫普通点。
+//   - 斋：不能首叫；从普通叫点「Q 个 X」进入需 ≥ Q-1 斋；斋之后只能继续加斋。
 func IsValidRaise(prev *Bid, kind BidKind, quantity, face, playerCount int) bool {
 	if quantity < 1 {
 		return false

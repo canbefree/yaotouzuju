@@ -106,9 +106,12 @@ func spaHandler(dir string) http.Handler {
 		if info, err := os.Stat(full); err == nil && !info.IsDir() {
 			if strings.HasSuffix(clean, ".html") {
 				w.Header().Set("Cache-Control", "no-cache")
-			} else if strings.Contains(clean, "/js/") || strings.Contains(clean, "/css/") || strings.Contains(clean, "/static/") {
-				// 文件名带内容哈希，可长期缓存
+			} else if strings.Contains(clean, "/js/") || strings.Contains(clean, "/css/") {
+				// 打包产物文件名带内容哈希，可长期缓存
 				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			} else {
+				// /static 下的图片等文件名不带哈希，必须每次回源校验，否则更新后客户端会一直用旧图
+				w.Header().Set("Cache-Control", "no-cache")
 			}
 			fs.ServeHTTP(w, r)
 			return

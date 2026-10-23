@@ -222,7 +222,7 @@ func (e *Engine) Start(roomID, openid string) (string, error) {
 	return roomID, nil
 }
 
-// Bid 叫点。kind 为 BidKindPoint（默认）或 BidKindPillar（柱，face 忽略）。
+// Bid 叫点。kind 为 BidKindPoint（默认）或 BidKindPillar（斋，face 忽略）。
 func (e *Engine) Bid(roomID, openid string, kind BidKind, quantity, face int) (string, error) {
 	e.mu.Lock()
 	room, ok := e.rooms[roomID]
@@ -249,7 +249,7 @@ func (e *Engine) Bid(roomID, openid string, kind BidKind, quantity, face int) (s
 	if !IsValidRaise(room.Bid, kind, quantity, face, e.activeCountLocked(room)) {
 		e.mu.Unlock()
 		if kind == BidKindPillar {
-			return "", newErr("BAD_BID", "柱必须比上家大（普通叫点后可从“数量-1”柱起，柱后只能继续加柱）", 400)
+			return "", newErr("BAD_BID", "斋必须比上家大（普通叫点后可从“数量-1”斋起，斋后只能继续加斋）", 400)
 		}
 		return "", newErr("BAD_BID", "叫点必须比上家大（数量更多，或同数量点数更大）", 400)
 	}
