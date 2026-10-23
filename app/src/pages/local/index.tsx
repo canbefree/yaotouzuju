@@ -203,7 +203,7 @@ export default function Local() {
             <Text className="local-seat-score">{p.score}</Text>
             <View className="local-seat-dice">
               {p.dice.map((d, i) => (
-                <Dice key={i} value={game.status === 'roundEnd' ? d : 0} size={34} />
+                <Dice key={i} value={game.status === 'roundEnd' ? d : 0} size={44} />
               ))}
             </View>
           </View>
@@ -233,7 +233,7 @@ export default function Local() {
             <Dice
               key={i}
               value={rolling ? rollDice[i] || d : d}
-              size={88}
+              size={128}
               rolling={rolling}
               variant={myBaozi ? 'glow' : d === myHiFace ? 'selected' : 'normal'}
             />
@@ -289,7 +289,7 @@ export default function Local() {
                     <Dice
                       key={i}
                       value={d}
-                      size={38}
+                      size={55}
                       variant={
                         game.result && d === (game.result.bid.kind === 'pillar' ? game.result.pillarFace : game.result.bid.face)
                           ? 'selected'

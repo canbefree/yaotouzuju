@@ -165,7 +165,7 @@ export default function Room() {
             <Text className="seat-score">{p.score} 分</Text>
             <View className="seat-dice">
               {Array.from({ length: p.diceCount }).map((_, i) => (
-                <Dice key={i} value={p.dice ? p.dice[i] : 0} size={34} />
+                <Dice key={i} value={p.dice ? p.dice[i] : 0} size={44} />
               ))}
             </View>
             {view.status === 'waiting' ? (
@@ -215,12 +215,12 @@ export default function Room() {
         </View>
         <View className="room-me-dice">
           {view.status === 'waiting'
-            ? Array.from({ length: per }).map((_, i) => <Dice key={i} value={0} size={88} />)
+            ? Array.from({ length: per }).map((_, i) => <Dice key={i} value={0} size={128} />)
             : view.myDice.map((d, i) => (
                 <Dice
                   key={i}
                   value={rolling ? rollDice[i] || d : d}
-                  size={88}
+                  size={128}
                   rolling={rolling}
                   variant={myBaozi ? 'glow' : d === myHiFace ? 'selected' : 'normal'}
                 />
@@ -345,7 +345,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
                   <Text className="result-reveal-name">{r.nickname}</Text>
                   <View className="result-reveal-diceset">
                     {r.dice.map((d, i) => (
-                      <Dice key={i} value={d} size={46} variant={d === hitFace ? 'selected' : 'normal'} />
+                      <Dice key={i} value={d} size={66} variant={d === hitFace ? 'selected' : 'normal'} />
                     ))}
                   </View>
                 </View>

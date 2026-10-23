@@ -122,7 +122,7 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, onClo
               <Text className="bid-preview-num">{qty}</Text>
               <Text className="bid-preview-unit">个</Text>
               <View className="bid-preview-dice">
-                <Dice value={face} size={76} variant="selected" />
+                <Dice value={face} size={110} variant="selected" />
               </View>
             </>
           ) : (
