@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { View, ScrollView } from '@tarojs/components'
 
 import './index.scss'
@@ -11,6 +11,8 @@ interface Props {
   itemHeight?: number
   /** 可见项数（奇数） */
   visible?: number
+  /** 自定义单项渲染（如用骰子图代替数字） */
+  renderItem?: (item: number) => ReactNode
 }
 
 /**
@@ -18,7 +20,7 @@ interface Props {
  * 用 ScrollView 实现：桌面浏览器用鼠标滚轮/点击，移动端用手指拖动，两端都能实时同步选中值。
  * （Taro 自带的 PickerView 在 H5 只监听 touch 事件，桌面鼠标滚动不会回调 onChange。）
  */
-export default function Wheel({ items, index, onChange, itemHeight = 48, visible = 5 }: Props) {
+export default function Wheel({ items, index, onChange, itemHeight = 48, visible = 5, renderItem }: Props) {
   const pad = ((visible - 1) / 2) * itemHeight
   const [top, setTop] = useState(index * itemHeight)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -73,7 +75,7 @@ export default function Wheel({ items, index, onChange, itemHeight = 48, visible
           style={{ height: `${itemHeight}px`, lineHeight: `${itemHeight}px` }}
           onClick={() => pick(i)}
         >
-          {it}
+          {renderItem ? renderItem(it) : it}
         </View>
       ))}
       <View style={{ height: `${pad}px` }} />

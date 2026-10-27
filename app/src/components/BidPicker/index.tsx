@@ -103,7 +103,12 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
                 <Wheel items={qtyOptions} index={clamp(qtyIdx, qtyOptions.length)} onChange={(i) => { setQtyIdx(i); setFaceIdx(0) }} />
               </View>
               <View className="bid-wheel">
-                <Wheel items={faceOptions} index={clamp(faceIdx, faceOptions.length)} onChange={setFaceIdx} />
+                <Wheel
+                  items={faceOptions}
+                  index={clamp(faceIdx, faceOptions.length)}
+                  onChange={setFaceIdx}
+                  renderItem={(f) => <Dice value={f} sizePx={46} />}
+                />
               </View>
             </>
           ) : (
@@ -112,7 +117,12 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
                 <Wheel items={pillarOptions} index={clamp(pilIdx, pillarOptions.length)} onChange={(i) => { setPilIdx(i); setPilFaceIdx(0) }} />
               </View>
               <View className="bid-wheel">
-                <Wheel items={pillarFaceOptions} index={clamp(pilFaceIdx, pillarFaceOptions.length)} onChange={setPilFaceIdx} />
+                <Wheel
+                  items={pillarFaceOptions}
+                  index={clamp(pilFaceIdx, pillarFaceOptions.length)}
+                  onChange={setPilFaceIdx}
+                  renderItem={(f) => <Dice value={f} sizePx={46} zhai />}
+                />
               </View>
             </>
           )}

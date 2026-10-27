@@ -18,3 +18,12 @@
   color: var(--ink);
   transform: scale(1.12);
 }
+
+/* 图片项（骰子）用透明度表示远近 */
+.wheel-item .dice-slot {
+  transition: opacity 0.15s ease;
+}
+
+.wheel-item:not(.on) .dice-slot {
+  opacity: 0.5;
+}

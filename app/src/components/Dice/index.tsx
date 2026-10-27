@@ -14,6 +14,8 @@ interface Props {
   /** 1~6；0 表示盖着（或隐藏）的骰子背面 */
   value: number
   size?: number
+  /** 绝对像素尺寸（用于滚轮等固定像素容器，优先于 size） */
+  sizePx?: number
   /** 变暗（保留兼容） */
   dim?: boolean
   /** 滚动中：轻微抖动 */
@@ -48,7 +50,7 @@ const BODY_RATIO = 0.67
  * 骰子：使用 dice_assets_rainbow 的三张精灵图（普通/选中/加强特效），按帧偏移取点数。
  * 盖着的骰子用暖木色背面 + 菱形徽记。
  */
-export default function Dice({ value, size = 88, dim = false, rolling = false, variant = 'normal', zhai = false }: Props) {
+export default function Dice({ value, size = 88, sizePx, dim = false, rolling = false, variant = 'normal', zhai = false }: Props) {
   const back = value < 1
   const cls = [
     'dice-slot',
@@ -58,20 +60,25 @@ export default function Dice({ value, size = 88, dim = false, rolling = false, v
     .filter(Boolean)
     .join(' ')
 
+  const box = sizePx ? `${sizePx}px` : rem(size)
+
   return (
-    <View className={cls} style={{ width: rem(size), height: rem(size) }}>
+    <View className={cls} style={{ width: box, height: box }}>
       {back ? (
         <View
           className="dice-back"
           style={{
-            width: rem(size * BODY_RATIO),
-            height: rem(size * BODY_RATIO),
-            borderRadius: rem(size * BODY_RATIO * 0.2)
+            width: sizePx ? `${sizePx * BODY_RATIO}px` : rem(size * BODY_RATIO),
+            height: sizePx ? `${sizePx * BODY_RATIO}px` : rem(size * BODY_RATIO),
+            borderRadius: sizePx ? `${sizePx * BODY_RATIO * 0.2}px` : rem(size * BODY_RATIO * 0.2)
           }}
         >
           <View
             className="dice-emblem"
-            style={{ width: rem(size * BODY_RATIO * 0.34), height: rem(size * BODY_RATIO * 0.34) }}
+            style={{
+              width: sizePx ? `${sizePx * BODY_RATIO * 0.34}px` : rem(size * BODY_RATIO * 0.34),
+              height: sizePx ? `${sizePx * BODY_RATIO * 0.34}px` : rem(size * BODY_RATIO * 0.34)
+            }}
           />
         </View>
       ) : (
