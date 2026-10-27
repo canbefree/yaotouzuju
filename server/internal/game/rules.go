@@ -91,17 +91,16 @@ func MinFirstQuantity(playerCount int) int {
 	return q
 }
 
-// MaxFaceCount 全场出现次数最多的点数及其次数（叫斋的判定依据）。
-func MaxFaceCount(all [][]int) (face, count int) {
-	for f := 1; f <= DiceFaces; f++ {
-		if c := CountFace(all, f); c > count {
-			face, count = f, c
-		}
+// CountBid 统计叫点 face 的命中数。
+// 普通叫点：1 点可当任意点数（叫 1 时只数 1）；斋：1 点不再万能，按普通骰子计。
+func CountBid(all [][]int, face int, zhai bool) int {
+	if zhai || face == 1 {
+		return CountFace(all, face)
 	}
-	return face, count
+	return CountFace(all, face) + CountFace(all, 1)
 }
 
-// MinPillarQuantity 从「N 个 X」进入「斋」的最小斋数：数量减 1，最少 1 斋。
+// MinPillarQuantity 从「N 个 X」进入「斋」的最小数量：数量减 1（斋少了 1 点万能，算补偿）。
 func MinPillarQuantity(prevQuantity int) int {
 	q := prevQuantity - 1
 	if q < 1 {
@@ -112,17 +111,24 @@ func MinPillarQuantity(prevQuantity int) int {
 
 // IsValidRaise 校验新叫点是否合法。
 //   - 普通叫点：数量更大（面值任意），或数量相同而面值更大；斋之后不可再叫普通点。
-//   - 斋：不能首叫；从普通叫点「Q 个 X」进入需 ≥ Q-1 斋；斋之后只能继续加斋。
+//   - 斋「N 个 X 斋」：必须指定点数；不能首叫；从普通叫点「Q 个 X」进入需 ≥ Q-1 个；
+//     斋之后只能继续加斋：数量更大，或数量相同而点数更大。
 func IsValidRaise(prev *Bid, kind BidKind, quantity, face, playerCount int) bool {
 	if quantity < 1 {
 		return false
 	}
 	if kind == BidKindPillar {
+		if face < 1 || face > DiceFaces {
+			return false
+		}
 		if prev == nil {
 			return false
 		}
 		if KindOf(*prev) == BidKindPillar {
-			return quantity > prev.Quantity
+			if quantity > prev.Quantity {
+				return true
+			}
+			return quantity == prev.Quantity && face > prev.Face
 		}
 		return quantity >= MinPillarQuantity(prev.Quantity)
 	}

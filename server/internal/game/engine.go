@@ -253,10 +253,7 @@ func (e *Engine) Bid(roomID, openid string, kind BidKind, quantity, face int) (s
 		}
 		return "", newErr("BAD_BID", "叫点必须比上家大（数量更多，或同数量点数更大）", 400)
 	}
-	bid := &Bid{Seat: p.Seat, Kind: kind, Quantity: quantity, At: nowMs()}
-	if kind == BidKindPoint {
-		bid.Face = face
-	}
+	bid := &Bid{Seat: p.Seat, Kind: kind, Quantity: quantity, Face: face, At: nowMs()}
 	room.Bid = bid
 	room.BidHistory = append(room.BidHistory, *room.Bid)
 	e.nextTurnLocked(room, p.Seat)
@@ -577,10 +574,7 @@ func (e *Engine) settleLocked(room *Room, bidderSeat, challengerSeat int) Event 
 		allDice = append(allDice, p.Dice)
 	}
 	pillarFace := bid.Face
-	actual := CountFace(allDice, bid.Face)
-	if KindOf(bid) == BidKindPillar {
-		pillarFace, actual = MaxFaceCount(allDice)
-	}
+	actual := CountBid(allDice, bid.Face, KindOf(bid) == BidKindPillar)
 	bidTrue := actual >= bid.Quantity
 	winnerSeat := challengerSeat
 	loserSeat := bidderSeat

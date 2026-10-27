@@ -44,7 +44,7 @@ export default function Local() {
   const me = game?.players.find((p) => p.seat === 0)
   const isMyTurn = !!game && game.status === 'playing' && game.turn === 0
   const myDice = game?.players[0]?.dice || []
-  const myHiFace = game?.bid && game.bid.kind !== 'pillar' && game.status === 'playing' ? game.bid.face : 0
+  const myHiFace = game?.bid && game.status === 'playing' ? game.bid.face : 0
   const myBaozi = !!game && game.status === 'playing' && myDice.length > 1 && myDice.every((d) => d === myDice[0])
 
   // 新一轮摇骰动画
@@ -204,7 +204,7 @@ export default function Local() {
             <Text className="local-seat-score">{p.score}</Text>
             <View className="local-seat-dice">
               {p.dice.map((d, i) => (
-                <Dice key={i} value={game.status === 'roundEnd' ? d : 0} size={44} />
+                <Dice key={i} value={game.status === 'roundEnd' ? d : 0} size={44} zhai={game.bid?.kind === 'pillar'} />
               ))}
             </View>
           </View>
@@ -237,6 +237,7 @@ export default function Local() {
               size={128}
               rolling={rolling}
               variant={myBaozi ? 'effect' : d === myHiFace ? 'pick' : 'normal'}
+              zhai={game.bid?.kind === 'pillar'}
             />
           ))}
         </View>
@@ -302,7 +303,7 @@ export default function Local() {
             </Text>
             <Text className={`local-result-line ${game.result.bidTrue ? 'good' : 'bad'}`}>
               {game.result.bid.kind === 'pillar'
-                ? `全场最多 ${game.result.pillarFace} 点 ×${game.result.actual} → ${game.result.bid.quantity} 斋${game.result.bidTrue ? '成立' : '不成立'}`
+                ? `实际 ${game.result.actual} 个 ${game.result.bid.face}（斋）→ 喊 ${game.result.bid.quantity} 个 ${game.result.bid.face} 斋${game.result.bidTrue ? '成立' : '不成立'}`
                 : `实际共 ${game.result.actual} 个 ${game.result.bid.face} → 叫点${game.result.bidTrue ? '成立' : '不成立'}`}
             </Text>
             {game.result.reveal.map((r) => (
@@ -314,6 +315,7 @@ export default function Local() {
                       key={i}
                       value={d}
                       size={55}
+                      zhai={game.result?.bid.kind === 'pillar'}
                       variant={
                         game.result && d === (game.result.bid.kind === 'pillar' ? game.result.pillarFace : game.result.bid.face)
                           ? 'pick'

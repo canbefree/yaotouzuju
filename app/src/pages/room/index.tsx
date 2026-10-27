@@ -134,7 +134,7 @@ export default function Room() {
   const opponents = view.players.filter((p) => p.left === false && p.seat !== view.mySeat)
   const isPillar = view.bid?.kind === 'pillar'
   // 高亮：叫点阶段，我的骰子里与当前叫点相同的；豹子（全同点）用加强特效
-  const myHiFace = view.bid && !isPillar && view.status === 'playing' ? view.bid.face : 0
+  const myHiFace = view.bid && view.status === 'playing' ? view.bid.face : 0
   const myBaozi = view.status === 'playing' && view.myDice.length > 1 && view.myDice.every((d) => d === view.myDice[0])
 
   return (
@@ -166,7 +166,7 @@ export default function Room() {
             <Text className="seat-score">{p.score} 分</Text>
             <View className="seat-dice">
               {Array.from({ length: p.diceCount }).map((_, i) => (
-                <Dice key={i} value={p.dice ? p.dice[i] : 0} size={44} />
+                <Dice key={i} value={p.dice ? p.dice[i] : 0} size={44} zhai={isPillar} />
               ))}
             </View>
             {view.status === 'waiting' ? (
@@ -224,6 +224,7 @@ export default function Room() {
                   size={128}
                   rolling={rolling}
                   variant={myBaozi ? 'effect' : d === myHiFace ? 'pick' : 'normal'}
+                  zhai={isPillar}
                 />
               ))}
         </View>
@@ -360,7 +361,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
             </Text>
             <Text className={`result-reveal-line ${round.bidTrue ? 'good' : 'bad'}`}>
               {round.bid.kind === 'pillar'
-                ? `全场最多 ${round.pillarFace} 点 ×${round.actual} → ${round.bid.quantity} 斋${round.bidTrue ? '成立' : '不成立'}`
+                ? `实际 ${round.actual} 个 ${round.bid.face}（斋）→ 喊 ${round.bid.quantity} 个 ${round.bid.face} 斋${round.bidTrue ? '成立' : '不成立'}`
                 : `实际共 ${round.actual} 个 ${round.bid.face} → 叫点${round.bidTrue ? '成立' : '不成立'}`}
             </Text>
             <View className="result-reveal-dice">
@@ -369,7 +370,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
                   <Text className="result-reveal-name">{r.nickname}</Text>
                   <View className="result-reveal-diceset">
                     {r.dice.map((d, i) => (
-                      <Dice key={i} value={d} size={66} variant={d === hitFace ? 'pick' : 'normal'} />
+                      <Dice key={i} value={d} size={66} variant={d === hitFace ? 'pick' : 'normal'} zhai={round?.bid.kind === 'pillar'} />
                     ))}
                   </View>
                 </View>

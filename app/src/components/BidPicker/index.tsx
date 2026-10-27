@@ -6,6 +6,7 @@ import Wheel from '../Wheel'
 import {
   canPillar,
   canPoint,
+  pillarFaces,
   pillarQuantities,
   pointFaces,
   pointQuantities,
@@ -40,6 +41,7 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
   const [qtyIdx, setQtyIdx] = useState(0)
   const [faceIdx, setFaceIdx] = useState(0)
   const [pilIdx, setPilIdx] = useState(0)
+  const [pilFaceIdx, setPilFaceIdx] = useState(0)
 
   const qtyOptions = useMemo(() => pointQuantities(prev, playerCount, totalDice), [prev, playerCount, totalDice])
   const pillarOptions = useMemo(() => pillarQuantities(prev, totalDice), [prev, totalDice])
@@ -50,6 +52,8 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
   const faceOptions = useMemo(() => pointFaces(prev, qty), [prev, qty])
   const face = faceOptions[clamp(faceIdx, faceOptions.length)] ?? 6
   const pillar = pillarOptions[clamp(pilIdx, pillarOptions.length)] ?? 1
+  const pillarFaceOptions = useMemo(() => pillarFaces(prev, pillar), [prev, pillar])
+  const pillarFace = pillarFaceOptions[clamp(pilFaceIdx, pillarFaceOptions.length)] ?? 1
 
   useEffect(() => {
     if (!visible) return
@@ -57,6 +61,7 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
     setQtyIdx(0)
     setFaceIdx(0)
     setPilIdx(0)
+    setPilFaceIdx(0)
   }, [visible])
 
   if (!visible) return null
@@ -67,11 +72,11 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
       onConfirm({ kind: 'point', quantity: qty, face })
     } else {
       if (!allowPillar) return
-      onConfirm({ kind: 'pillar', quantity: pillar, face: 0 })
+      onConfirm({ kind: 'pillar', quantity: pillar, face: pillarFace })
     }
   }
 
-  const title = mode === 'point' ? `喊 ${qty} 个 ${face}` : `喊 ${pillar} 斋`
+  const title = mode === 'point' ? `喊 ${qty} 个 ${face}` : `喊 ${pillar} 个 ${pillarFace} 斋`
 
   return (
     <View className="overlay" onClick={onClose}>
@@ -86,12 +91,12 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
                 ? allowPoint
                   ? '上滚＝加数量，下滚＝加点数'
                   : '已有人喊斋，只能继续加斋'
-                : '全场至少有这么多骰子同点（喊斋后只能继续加斋）'}
+                : '斋：这些骰子里点数要够，且 1 点不再万能'}
             </Text>
           </View>
         </View>
 
-        <View className={`bid-wheels ${mode === 'point' ? '' : 'single'}`}>
+        <View className="bid-wheels">
           {mode === 'point' ? (
             <>
               <View className="bid-wheel">
@@ -102,9 +107,14 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
               </View>
             </>
           ) : (
-            <View className="bid-wheel">
-              <Wheel items={pillarOptions} index={clamp(pilIdx, pillarOptions.length)} onChange={setPilIdx} />
-            </View>
+            <>
+              <View className="bid-wheel">
+                <Wheel items={pillarOptions} index={clamp(pilIdx, pillarOptions.length)} onChange={(i) => { setPilIdx(i); setPilFaceIdx(0) }} />
+              </View>
+              <View className="bid-wheel">
+                <Wheel items={pillarFaceOptions} index={clamp(pilFaceIdx, pillarFaceOptions.length)} onChange={setPilFaceIdx} />
+              </View>
+            </>
           )}
           <View className="wheel-mid" style={{ height: `${ITEM_H}px`, marginTop: `${-ITEM_H / 2}px` }} />
         </View>
@@ -121,6 +131,10 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, force
           ) : (
             <>
               <Text className="bid-preview-num gold">{pillar}</Text>
+              <Text className="bid-preview-unit">个</Text>
+              <View className="bid-preview-dice">
+                <Dice value={pillarFace} size={110} variant="pick" zhai />
+              </View>
               <View className="bid-pillar-badge">斋</View>
             </>
           )}

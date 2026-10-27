@@ -64,18 +64,10 @@ function countFace(players: LocalPlayer[], face: number): number {
   return n
 }
 
-/** 全场出现次数最多的点数及其次数（叫斋的判定依据）。 */
-function maxFaceCount(players: LocalPlayer[]): { face: number; count: number } {
-  let face = 1
-  let count = 0
-  for (let f = 1; f <= 6; f += 1) {
-    const c = countFace(players, f)
-    if (c > count) {
-      face = f
-      count = c
-    }
-  }
-  return { face, count }
+/** 叫点命中数：普通叫点 1 点万能；斋里 1 点只是普通骰子。 */
+function countBid(players: LocalPlayer[], face: number, zhai: boolean): number {
+  if (zhai || face === 1) return countFace(players, face)
+  return countFace(players, face) + countFace(players, 1)
 }
 
 export function minFirstQuantity(playerCount: number): number {
@@ -89,8 +81,12 @@ export function minPillarQuantity(prevQuantity: number): number {
 export function isValidRaise(bid: Bid | null, kind: BidKind, q: number, f: number, playerCount: number): boolean {
   if (q < 1) return false
   if (kind === 'pillar') {
+    if (f < 1 || f > 6) return false
     if (!bid) return false
-    if (bid.kind === 'pillar') return q > bid.quantity
+    if (bid.kind === 'pillar') {
+      if (q > bid.quantity) return true
+      return q === bid.quantity && f > bid.face
+    }
     return q >= minPillarQuantity(bid.quantity)
   }
   if (f < 1 || f > 6) return false
@@ -154,7 +150,7 @@ export function placeBid(s: LocalState, seat: number, kind: BidKind, quantity: n
   if (!isValidRaise(s.bid, kind, quantity, face, s.players.length)) return s
   return {
     ...s,
-    bid: { seat, kind, quantity, face: kind === 'pillar' ? 0 : face },
+    bid: { seat, kind, quantity, face },
     turn: (seat + 1) % s.players.length
   }
 }
@@ -162,13 +158,8 @@ export function placeBid(s: LocalState, seat: number, kind: BidKind, quantity: n
 export function challenge(s: LocalState, seat: number): LocalState {
   if (s.status !== 'playing' || s.turn !== seat || !s.bid) return s
   const bid = s.bid
-  let actual = countFace(s.players, bid.face)
-  let pillarFace = bid.face
-  if (bid.kind === 'pillar') {
-    const m = maxFaceCount(s.players)
-    pillarFace = m.face
-    actual = m.count
-  }
+  const pillarFace = bid.face
+  const actual = countBid(s.players, bid.face, bid.kind === 'pillar')
   const bidTrue = actual >= bid.quantity
   const winnerSeat = bidTrue ? bid.seat : seat
   const loserSeat = bidTrue ? seat : bid.seat
@@ -203,36 +194,45 @@ export function aiAction(s: LocalState): AIAction {
   const others = s.players.filter((p) => p.seat !== s.turn).length * s.dicePerPlayer
   const bid = s.bid
 
-  const estimate = (face: number) => me.dice.filter((d) => d === face).length + others / 6
+  const mineZ = (face: number) => me.dice.filter((d) => d === face).length
+  const mineN = (face: number) => mineZ(face) + (face === 1 ? 0 : mineZ(1))
+  // 未知骰子：普通叫点时点数或 1 都算（2/6）；斋时只算点数（1/6）
+  const estN = (face: number) => mineN(face) + (face === 1 ? others / 6 : others / 3)
+  const estZ = (face: number) => mineZ(face) + others / 6
   const fav = favoriteFace(me.dice)
-  const favCount = me.dice.filter((d) => d === fav).length
-  const maxSame = favCount + others / 6
 
   if (bid) {
     if (bid.kind === 'pillar') {
+      // 斋：先试同数量更高点数，再加数量
+      for (let f = bid.face + 1; f <= 6; f += 1) {
+        if (bid.quantity <= estZ(f) + 0.6) {
+          return { type: 'bid', kind: 'pillar', quantity: bid.quantity, face: f }
+        }
+      }
       const need = bid.quantity + 1
-      if (need <= maxSame + 0.8) return { type: 'bid', kind: 'pillar', quantity: need, face: 0 }
+      if (need <= estZ(fav) + 0.6) return { type: 'bid', kind: 'pillar', quantity: need, face: fav }
       return { type: 'challenge' }
     }
-    if (bid.quantity > estimate(bid.face) + 0.9) return { type: 'challenge' }
+    if (bid.quantity > estN(bid.face) + 0.9) return { type: 'challenge' }
     // 手里同点多，转喊斋（可从 数量-1 起）
     const minPillar = minPillarQuantity(bid.quantity)
-    if (maxSame >= minPillar + 1.2) {
-      return { type: 'bid', kind: 'pillar', quantity: minPillar, face: 0 }
+    const zFace = mineZ(fav) >= mineZ(bid.face) ? fav : bid.face
+    if (mineZ(zFace) >= minPillar && estZ(zFace) >= minPillar + 0.4) {
+      return { type: 'bid', kind: 'pillar', quantity: minPillar, face: zFace }
     }
     for (let f = bid.face + 1; f <= 6; f += 1) {
-      if (bid.quantity <= estimate(f) + 1.2) {
+      if (bid.quantity <= estN(f) + 1.2) {
         return { type: 'bid', kind: 'point', quantity: bid.quantity, face: f }
       }
     }
     const q = bid.quantity + 1
-    if (q <= estimate(fav) + 1.2) {
+    if (q <= estN(fav) + 1.2) {
       return { type: 'bid', kind: 'point', quantity: q, face: fav }
     }
     return { type: 'challenge' }
   }
 
-  const q = Math.max(minFirstQuantity(s.players.length), Math.floor(estimate(fav)))
+  const q = Math.max(minFirstQuantity(s.players.length), Math.floor(estN(fav)))
   return { type: 'bid', kind: 'point', quantity: Math.max(1, q), face: fav }
 }
 

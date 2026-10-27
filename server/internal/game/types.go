@@ -51,11 +51,11 @@ type BidKind string
 const (
 	// BidKindPoint 普通叫点「N 个 X」：全场至少 N 颗点数 X。
 	BidKindPoint BidKind = "point"
-	// BidKindPillar 叫斋「N 斋」：全场至少 N 颗同点（不限点数），即“豹子型”。
+	// BidKindPillar 叫斋「N 个 X 斋」：全场至少 N 颗点数 X，且 1 点不再万能。
 	BidKindPillar BidKind = "pillar"
 )
 
-// Bid 一次叫点。斋时 Face 为 0（无点数）。
+// Bid 一次叫点。斋与普通叫点一样带数量和点数，斋时 1 点不参与万能。
 type Bid struct {
 	Seat     int     `json:"seat"`
 	Kind     BidKind `json:"kind"`
@@ -87,7 +87,7 @@ type RoundResult struct {
 	Bid            Bid      `json:"bid"`
 	Actual         int      `json:"actual"`
 	BidTrue        bool     `json:"bidTrue"`
-	// PillarFace 斋结算时出现次数最多的点数（普通叫点时等于叫的点数）。
+	// PillarFace 斋结算时叫的点数（普通叫点时同样等于叫的点数）。
 	PillarFace int      `json:"pillarFace"`
 	WinnerSeat int      `json:"winnerSeat"`
 	LoserSeat  int      `json:"loserSeat"`

@@ -7,14 +7,14 @@ export interface BidLike {
   face: number
 }
 
-/** 叫点文案：`5个4` / `4斋`。 */
+/** 叫点文案：`5个4` / `3个2斋`。 */
 export function bidLabel(b: BidLike): string {
-  return b.kind === 'pillar' ? `${b.quantity}斋` : `${b.quantity}个${b.face}`
+  return b.kind === 'pillar' ? `${b.quantity}个${b.face}斋` : `${b.quantity}个${b.face}`
 }
 
-/** 带空格的宽版文案：`5 个 4` / `4 斋`。 */
+/** 带空格的宽版文案：`5 个 4` / `3 个 2 斋`。 */
 export function bidFull(b: BidLike): string {
-  return b.kind === 'pillar' ? `${b.quantity} 斋` : `${b.quantity} 个 ${b.face}`
+  return b.kind === 'pillar' ? `${b.quantity} 个 ${b.face} 斋` : `${b.quantity} 个 ${b.face}`
 }
 
 export interface BidChoice {
@@ -60,11 +60,22 @@ export function pointFaces(prev: BidLike | null, quantity: number): number[] {
   return out
 }
 
-/** 斋：可选斋数（升序）。普通叫点 Q 个之后从 Q-1 斋起；斋之后只能更大。 */
+/**
+ * 斋：可选数量（升序）。普通叫点 Q 个之后从 Q-1 起（斋里少了 1 点万能）；
+ * 斋之后数量更大，或数量相同再比点数，所以从当前数量起。
+ */
 export function pillarQuantities(prev: BidLike | null, totalDice: number): number[] {
   if (!prev) return []
-  const min = prev.kind === 'pillar' ? prev.quantity + 1 : Math.max(1, prev.quantity - 1)
+  const min = prev.kind === 'pillar' ? prev.quantity : Math.max(1, prev.quantity - 1)
   const out: number[] = []
   for (let n = min; n <= totalDice; n++) out.push(n)
+  return out
+}
+
+/** 斋：某数量下可选点数（升序）。斋里同数量要求点数更大。 */
+export function pillarFaces(prev: BidLike | null, quantity: number): number[] {
+  const minFace = prev && prev.kind === 'pillar' && prev.quantity === quantity ? prev.face + 1 : 1
+  const out: number[] = []
+  for (let f = minFace; f <= 6; f++) out.push(f)
   return out
 }
