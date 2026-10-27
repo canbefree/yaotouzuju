@@ -108,31 +108,9 @@
   box-shadow: 0 4px 0 #d98a13;
 }
 
-.bid-foot {
+.bid-confirm {
   margin-top: 24px;
-  display: flex;
-  align-items: stretch;
-  gap: 20px;
-}
-
-.bid-foot .bid-confirm {
-  margin-top: 0;
-  flex: 1;
-}
-
-.bid-foot.single .bid-confirm {
   width: 100%;
-}
-
-/* 斋：独立按钮，点击后本面板只能以斋继续（不可回退到点数） */
-.bid-zhai {
-  flex: 0 0 auto;
-  width: 140px;
-  background: linear-gradient(180deg, #ffd27a 0%, #f5a623 100%);
-  color: #7a4a06;
-  font-weight: 900;
-  font-size: 34px;
-  box-shadow: 0 4px 0 #d98a13;
 }
 
 @keyframes bid-pop {

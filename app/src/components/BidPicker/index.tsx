@@ -19,6 +19,8 @@ interface Props {
   prev: BidLike | null
   playerCount: number
   totalDice: number
+  /** 从行动栏的「斋」按钮进入：直接锁定斋模式 */
+  forcePillar?: boolean
   onClose: () => void
   onConfirm: (choice: BidChoice) => void
 }
@@ -30,9 +32,10 @@ const ITEM_H = 48
 
 /**
  * 叫点面板：用滚动选择（PickerView 滚轮）代替加减按钮。
- * 默认喊点数；点「斋」后本面板锁定为斋模式，无法再回到点数（斋局只能继续加斋）。
+ * 默认喊点数；从行动栏「斋」进入（forcePillar）或上家已喊斋时，面板锁定为斋模式，
+ * 只能继续加斋，无法回到点数。
  */
-export default function BidPicker({ visible, prev, playerCount, totalDice, onClose, onConfirm }: Props) {
+export default function BidPicker({ visible, prev, playerCount, totalDice, forcePillar = false, onClose, onConfirm }: Props) {
   const [mode, setMode] = useState<'point' | 'pillar'>('point')
   const [qtyIdx, setQtyIdx] = useState(0)
   const [faceIdx, setFaceIdx] = useState(0)
@@ -50,7 +53,7 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, onClo
 
   useEffect(() => {
     if (!visible) return
-    setMode(allowPoint ? 'point' : 'pillar')
+    setMode(forcePillar || !allowPoint ? 'pillar' : 'point')
     setQtyIdx(0)
     setFaceIdx(0)
     setPilIdx(0)
@@ -69,7 +72,6 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, onClo
   }
 
   const title = mode === 'point' ? `喊 ${qty} 个 ${face}` : `喊 ${pillar} 斋`
-  const canSwitchToPillar = mode === 'point' && allowPillar
 
   return (
     <View className="overlay" onClick={onClose}>
@@ -124,15 +126,8 @@ export default function BidPicker({ visible, prev, playerCount, totalDice, onClo
           )}
         </View>
 
-        <View className={`bid-foot ${canSwitchToPillar ? '' : 'single'}`}>
-          {canSwitchToPillar ? (
-            <View className="btn bid-zhai" onClick={() => setMode('pillar')}>
-              斋
-            </View>
-          ) : null}
-          <View className="btn btn-primary bid-confirm" onClick={confirm}>
-            {title}
-          </View>
+        <View className="btn btn-primary bid-confirm" onClick={confirm}>
+          {title}
         </View>
       </View>
     </View>

@@ -15,6 +15,7 @@ import './index.scss'
 export default function Room() {
   const [state, setState] = useState<RoomState>(getRoom())
   const [showBid, setShowBid] = useState(false)
+  const [zhaiOnly, setZhaiOnly] = useState(false)
   const [chatText, setChatText] = useState('')
   const [rolling, setRolling] = useState(false)
   const [rollDice, setRollDice] = useState<number[]>([])
@@ -245,9 +246,28 @@ export default function Room() {
 
         {view.status === 'playing' ? (
           <>
-            <View className={`btn room-act btn-amber ${isMyTurn ? 'act-glow' : 'btn-disabled'}`} onClick={() => isMyTurn && setShowBid(true)}>
-              叫点数
+            <View
+              className={`btn room-act btn-amber ${isMyTurn ? 'act-glow' : 'btn-disabled'}`}
+              onClick={() => {
+                if (!isMyTurn) return
+                setZhaiOnly(false)
+                setShowBid(true)
+              }}
+            >
+              {isPillar ? '叫斋' : '叫点数'}
             </View>
+            {!isPillar ? (
+              <View
+                className={`btn room-act btn-gold ${isMyTurn && view.bid ? 'act-glow' : 'btn-disabled'}`}
+                onClick={() => {
+                  if (!isMyTurn || !view.bid) return
+                  setZhaiOnly(true)
+                  setShowBid(true)
+                }}
+              >
+                斋
+              </View>
+            ) : null}
             <View className={`btn room-act btn-blue ${isMyTurn && view.bid ? 'act-glow-blue' : 'btn-disabled'}`} onClick={() => isMyTurn && view.bid && onChallenge()}>
               吹牛
             </View>
@@ -288,7 +308,11 @@ export default function Room() {
         prev={view.bid}
         playerCount={active.length}
         totalDice={totalDice}
-        onClose={() => setShowBid(false)}
+        forcePillar={zhaiOnly}
+        onClose={() => {
+          setShowBid(false)
+          setZhaiOnly(false)
+        }}
         onConfirm={onBid}
       />
 

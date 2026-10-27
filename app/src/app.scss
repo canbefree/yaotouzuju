@@ -104,6 +104,13 @@ input {
   box-shadow: 0 8px 0 #d98a13;
 }
 
+/* 斋：比叫点更深一度，和叫点数区分开 */
+.btn-gold {
+  background: linear-gradient(180deg, #ffc352 0%, #e08a12 100%);
+  color: #57320a;
+  box-shadow: 0 8px 0 #b96b06;
+}
+
 .btn-sm {
   height: 72px;
   font-size: 26px;

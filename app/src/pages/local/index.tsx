@@ -36,6 +36,7 @@ export default function Local() {
   const [dice, setDice] = useState(5)
   const [target, setTarget] = useState(100)
   const [showBid, setShowBid] = useState(false)
+  const [zhaiOnly, setZhaiOnly] = useState(false)
   const [rolling, setRolling] = useState(false)
   const [rollDice, setRollDice] = useState<number[]>([])
   const [records, setRecords] = useState<RecordRow[]>([])
@@ -244,9 +245,28 @@ export default function Local() {
       <View className="local-actions">
         {game.status === 'playing' ? (
           <>
-            <View className={`btn btn-amber local-act ${isMyTurn ? 'act-glow' : 'btn-disabled'}`} onClick={() => isMyTurn && setShowBid(true)}>
-              叫点数
+            <View
+              className={`btn btn-amber local-act ${isMyTurn ? 'act-glow' : 'btn-disabled'}`}
+              onClick={() => {
+                if (!isMyTurn) return
+                setZhaiOnly(false)
+                setShowBid(true)
+              }}
+            >
+              {game.bid?.kind === 'pillar' ? '叫斋' : '叫点数'}
             </View>
+            {game.bid?.kind !== 'pillar' ? (
+              <View
+                className={`btn btn-gold local-act ${isMyTurn && game.bid ? 'act-glow' : 'btn-disabled'}`}
+                onClick={() => {
+                  if (!isMyTurn || !game.bid) return
+                  setZhaiOnly(true)
+                  setShowBid(true)
+                }}
+              >
+                斋
+              </View>
+            ) : null}
             <View className={`btn btn-blue local-act ${isMyTurn && game.bid ? 'act-glow-blue' : 'btn-disabled'}`} onClick={() => isMyTurn && game.bid && doChallenge()}>
               吹牛
             </View>
@@ -263,7 +283,11 @@ export default function Local() {
         prev={game.bid}
         playerCount={game.players.length}
         totalDice={game.players.length * game.dicePerPlayer}
-        onClose={() => setShowBid(false)}
+        forcePillar={zhaiOnly}
+        onClose={() => {
+          setShowBid(false)
+          setZhaiOnly(false)
+        }}
         onConfirm={doBid}
       />
 
