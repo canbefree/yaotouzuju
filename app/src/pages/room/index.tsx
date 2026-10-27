@@ -6,6 +6,7 @@ import Dice from '../../components/Dice'
 import NavBar from '../../components/NavBar'
 import Background from '../../components/Background'
 import BidPicker from '../../components/BidPicker'
+import ResultReveal from '../../components/ResultReveal'
 import { ApiError } from '../../api/client'
 import { getProfile } from '../../store/session'
 import { room, subscribeRoom, getRoom, type RoomState } from '../../store/roomStore'
@@ -341,44 +342,27 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
           return { seat: d.seat, openid: p?.openid || '', nickname: p?.nickname || '', avatar: p?.avatar || '', score: d.score, delta: d.delta }
         })
 
-  const hitFace = round ? (round.bid.kind === 'pillar' ? round.pillarFace : round.bid.face) : 0
-  const winnerName = match
-    ? view.players.find((p) => p.seat === match.winnerSeat)?.nickname
-    : round
-      ? view.players.find((p) => p.seat === round.winnerSeat)?.nickname
-      : ''
+  const players = round ? round.reveal.map((r) => ({ seat: r.seat, name: r.nickname, dice: r.dice })) : []
+  const winnerName =
+    (match
+      ? view.players.find((p) => p.seat === match.winnerSeat)?.nickname
+      : round
+        ? view.players.find((p) => p.seat === round.winnerSeat)?.nickname
+        : '') || ''
 
   return (
-    <View className="overlay">
-      <View className="result card">
-        <Text className="result-title">{match ? '本局结束' : `第 ${view.round} 轮结束`}</Text>
-        <Text className="result-winner">🏆 {winnerName} 胜</Text>
-
-        {round ? (
-          <View className="result-reveal">
-            <Text className="result-reveal-line">
-              {round.bidderSeat >= 0 ? `${view.players.find((p) => p.seat === round.bidderSeat)?.nickname} 叫 ${bidFull(round.bid)}` : ''}
-            </Text>
-            <Text className={`result-reveal-line ${round.bidTrue ? 'good' : 'bad'}`}>
-              {round.bid.kind === 'pillar'
-                ? `实际 ${round.actual} 个 ${round.bid.face}（斋）→ 喊 ${round.bid.quantity} 个 ${round.bid.face} 斋${round.bidTrue ? '成立' : '不成立'}`
-                : `实际共 ${round.actual} 个 ${round.bid.face} → 叫点${round.bidTrue ? '成立' : '不成立'}`}
-            </Text>
-            <View className="result-reveal-dice">
-              {round.reveal.map((r) => (
-                <View key={r.seat} className="result-reveal-row">
-                  <Text className="result-reveal-name">{r.nickname}</Text>
-                  <View className="result-reveal-diceset">
-                    {r.dice.map((d, i) => (
-                      <Dice key={i} value={d} size={66} variant={d === hitFace ? 'pick' : 'normal'} zhai={round?.bid.kind === 'pillar'} />
-                    ))}
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        ) : null}
-
+    <ResultReveal
+      title={match ? '游戏结束！' : `第 ${view.round} 轮结束`}
+      bid={round?.bid ?? null}
+      players={players}
+      actual={round?.actual ?? 0}
+      bidTrue={round?.bidTrue ?? false}
+      winnerName={winnerName}
+      nextLabel={match ? '再来一局' : '下一轮'}
+      onNext={onNext}
+      onLeave={onLeave}
+      sessionKey={`${view.round}-${match ? 'm' : 'r'}`}
+      footer={
         <View className="result-list">
           {ranking.map((r, i) => (
             <View key={r.seat} className="result-row">
@@ -390,16 +374,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
             </View>
           ))}
         </View>
-
-        <View className="result-actions">
-          <View className="btn btn-primary result-btn" onClick={onNext}>
-            {match ? '再来一局' : '下一轮'}
-          </View>
-          <View className="btn btn-ghost result-btn" onClick={onLeave}>
-            返回大厅
-          </View>
-        </View>
-      </View>
-    </View>
+      }
+    />
   )
 }

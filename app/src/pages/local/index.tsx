@@ -6,6 +6,7 @@ import Dice from '../../components/Dice'
 import NavBar from '../../components/NavBar'
 import Background from '../../components/Background'
 import BidPicker from '../../components/BidPicker'
+import ResultReveal from '../../components/ResultReveal'
 import {
   aiAction,
   challenge,
@@ -203,8 +204,8 @@ export default function Local() {
             <Text className="local-seat-name">{p.name}</Text>
             <Text className="local-seat-score">{p.score}</Text>
             <View className="local-seat-dice">
-              {p.dice.map((d, i) => (
-                <Dice key={i} value={game.status === 'roundEnd' ? d : 0} size={44} zhai={game.bid?.kind === 'pillar'} />
+              {p.dice.map((_, i) => (
+                <Dice key={i} value={0} size={44} zhai={game.bid?.kind === 'pillar'} />
               ))}
             </View>
           </View>
@@ -293,47 +294,32 @@ export default function Local() {
       />
 
       {game.status === 'roundEnd' && game.result ? (
-        <View className="overlay">
-          <View className="card local-result">
-            <Text className="local-result-title">
-              {game.winnerSeat !== null ? '本局结束' : `第 ${game.round} 轮结束`}
-            </Text>
-            <Text className="local-result-winner">
-              🏆 {game.players.find((p) => p.seat === game.result!.winnerSeat)?.name} 胜
-            </Text>
-            <Text className={`local-result-line ${game.result.bidTrue ? 'good' : 'bad'}`}>
-              {game.result.bid.kind === 'pillar'
-                ? `实际 ${game.result.actual} 个 ${game.result.bid.face}（斋）→ 喊 ${game.result.bid.quantity} 个 ${game.result.bid.face} 斋${game.result.bidTrue ? '成立' : '不成立'}`
-                : `实际共 ${game.result.actual} 个 ${game.result.bid.face} → 叫点${game.result.bidTrue ? '成立' : '不成立'}`}
-            </Text>
-            {game.result.reveal.map((r) => (
-              <View key={r.seat} className="local-result-row">
-                <Text className="local-result-name">{r.name}</Text>
-                <View className="local-result-dice">
-                  {r.dice.map((d, i) => (
-                    <Dice
-                      key={i}
-                      value={d}
-                      size={55}
-                      zhai={game.result?.bid.kind === 'pillar'}
-                      variant={
-                        game.result && d === (game.result.bid.kind === 'pillar' ? game.result.pillarFace : game.result.bid.face)
-                          ? 'pick'
-                          : 'normal'
-                      }
-                    />
-                  ))}
-                </View>
-              </View>
-            ))}
-            <View className="btn btn-primary local-result-btn" onClick={onNext}>
-              {game.winnerSeat !== null ? '再来一局' : '下一轮'}
+        <ResultReveal
+          title={game.winnerSeat !== null ? '游戏结束！' : `第 ${game.round} 轮结束`}
+          bid={game.result.bid}
+          players={game.result.reveal.map((r) => ({ seat: r.seat, name: r.name, dice: r.dice }))}
+          actual={game.result.actual}
+          bidTrue={game.result.bidTrue}
+          winnerName={game.players.find((p) => p.seat === game.result!.winnerSeat)?.name || ''}
+          nextLabel={game.winnerSeat !== null ? '再来一局' : '下一轮'}
+          onNext={onNext}
+          onLeave={() => setPhase('menu')}
+          leaveLabel="返回"
+          sessionKey={`${game.round}-${game.winnerSeat ?? 'r'}`}
+          footer={
+            <View className="rr-deltas">
+              {game.players.map((p) => {
+                const d = game.result?.deltas.find((x) => x.seat === p.seat)?.delta ?? 0
+                return (
+                  <Text key={p.seat} className={`rr-delta ${d > 0 ? 'good' : 'bad'}`}>
+                    {p.name} {d > 0 ? '+' : ''}
+                    {d}
+                  </Text>
+                )
+              })}
             </View>
-            <View className="btn btn-ghost local-result-btn" onClick={() => setPhase('menu')}>
-              返回
-            </View>
-          </View>
-        </View>
+          }
+        />
       ) : null}
     </View>
   )
