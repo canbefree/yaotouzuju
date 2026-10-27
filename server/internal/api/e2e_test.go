@@ -120,6 +120,7 @@ type view struct {
 		OpenID    string `json:"openid"`
 		Seat      int    `json:"seat"`
 		Score     int    `json:"score"`
+		NextReady bool   `json:"nextReady"`
 		DiceCount int    `json:"diceCount"`
 		Dice      []int  `json:"dice"`
 	} `json:"players"`
@@ -289,8 +290,22 @@ func TestFullGameFlow(t *testing.T) {
 		}
 	}
 
-	// 下一轮
-	_, envNext := e.call(t, "POST", "/api/game/next", alice.token, map[string]any{"roomId": room.RoomID})
+	// 下一轮：需要所有人点「下一轮/准备」才开局
+	_, envOne := e.call(t, "POST", "/api/game/next", alice.token, map[string]any{"roomId": room.RoomID})
+	if sv := parseView(t, envOne); sv.Status != "roundEnd" || sv.Round != 1 {
+		t.Fatalf("one ready should not start next round: status=%s round=%d", sv.Status, sv.Round)
+	}
+	var aliceReady bool
+	for _, p := range parseView(t, envOne).Players {
+		if p.OpenID == alice.openid {
+			aliceReady = p.NextReady
+		}
+	}
+	if !aliceReady {
+		t.Fatalf("alice should be marked next-ready")
+	}
+	e.call(t, "POST", "/api/game/next", bob.token, map[string]any{"roomId": room.RoomID})
+	_, envNext := e.call(t, "POST", "/api/game/next", carol.token, map[string]any{"roomId": room.RoomID})
 	if nv := parseView(t, envNext); nv.Status != "playing" || nv.Round != 2 {
 		t.Fatalf("next round unexpected: status=%s round=%d", nv.Status, nv.Round)
 	}

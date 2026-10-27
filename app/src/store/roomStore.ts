@@ -25,6 +25,9 @@ const LAST_ROOM_KEY = 'yaotou.lastRoom'
 let state: RoomState = { view: null, connected: false, chats: [], roundResult: null, matchResult: null }
 const listeners = new Set<(s: RoomState) => void>()
 let socket: Socket | null = null
+let connecting = false
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+let stopped = true
 
 function emit(): void {
   listeners.forEach((fn) => fn(state))
@@ -45,15 +48,40 @@ export function getRoom(): RoomState {
   return state
 }
 
+/** 应用服务端视图，顺带清掉上一轮/上一局的结算，避免旧弹窗卡住。 */
+function applyView(v: RoomView): void {
+  const patch: Partial<RoomState> = { view: v }
+  if (v.status === 'playing') {
+    if (state.roundResult && v.round > state.roundResult.round) patch.roundResult = null
+    if (state.matchResult && v.round <= 1) patch.matchResult = null
+  }
+  setState(patch)
+}
+
+function scheduleReconnect(): void {
+  if (stopped || retryTimer) return
+  retryTimer = setTimeout(() => {
+    retryTimer = null
+    ensureSocket()
+  }, 1500)
+}
+
+/**
+ * 建立 / 保持长连接。断线后自动重连，重连成功时拉一次房间状态，
+ * 补上断线期间错过的结算等事件。
+ */
 function ensureSocket(): void {
-  if (socket) return
+  if (stopped || socket || connecting) return
   const token = getToken()
   if (!token) return
-  void connectWs(
+  connecting = true
+  // connectWs 返回时只是登记了回调，连接还没建立；用 dead 标记这次尝试是否已失效
+  let dead = false
+  connectWs(
     token,
     (msg) => {
       if (msg.type === 'room_state' && msg.data) {
-        setState({ view: msg.data as RoomView })
+        applyView(msg.data as RoomView)
       } else if (msg.type === 'round_end' && msg.data) {
         setState({ roundResult: msg.data as RoundResult })
       } else if (msg.type === 'match_end' && msg.data) {
@@ -62,13 +90,47 @@ function ensureSocket(): void {
         setState({ chats: [...state.chats.slice(-60), msg.data as ChatMsg] })
       }
     },
-    (open) => setState({ connected: open })
-  ).then((s) => {
-    socket = s
-  })
+    (open) => {
+      setState({ connected: open })
+      if (open) {
+        dead = false
+        // 连上了：补齐断线期间错过的状态（结算等）
+        void room.refresh()
+        return
+      }
+      dead = true
+      const old = socket
+      socket = null
+      connecting = false
+      try {
+        old?.close()
+      } catch {
+        /* ignore */
+      }
+      scheduleReconnect()
+    }
+  )
+    .then((s) => {
+      connecting = false
+      if (stopped || dead) {
+        try {
+          s.close()
+        } catch {
+          /* ignore */
+        }
+        if (!stopped) scheduleReconnect()
+        return
+      }
+      socket = s
+    })
+    .catch(() => {
+      connecting = false
+      scheduleReconnect()
+    })
 }
 
 async function afterEnter(view: RoomView): Promise<RoomView> {
+  stopped = false
   Taro.setStorageSync(LAST_ROOM_KEY, view.roomId)
   const list: { roomId: string; modeName: string }[] = Taro.getStorageSync('yaotou.recent') || []
   const next = [{ roomId: view.roomId, modeName: view.modeName }, ...list.filter((r) => r.roomId !== view.roomId)].slice(0, 5)
@@ -76,6 +138,10 @@ async function afterEnter(view: RoomView): Promise<RoomView> {
   setState({ view, roundResult: view.roundResult, matchResult: view.matchResult, chats: [] })
   ensureSocket()
   return view
+}
+
+function currentRoomId(): string {
+  return state.view?.roomId || (Taro.getStorageSync(LAST_ROOM_KEY) as string) || ''
 }
 
 export const room = {
@@ -105,12 +171,18 @@ export const room = {
     return afterEnter(await api.joinRoom(getToken(), roomId.toUpperCase()))
   },
   async refresh(): Promise<void> {
-    const id = state.view?.roomId
+    const id = currentRoomId()
     if (!id) return
     await ensureLogin()
     try {
       const view = await api.roomState(getToken(), id)
-      setState({ view })
+      // 结算数据以服务端为准：断线期间错过的结果，靠这次拉取补回来
+      setState({
+        view,
+        roundResult: view.roundResult ?? state.roundResult,
+        matchResult: view.matchResult ?? state.matchResult
+      })
+      if (!stopped) ensureSocket()
     } catch (e) {
       if (e instanceof ApiError && e.code === 'ROOM_NOT_FOUND') {
         setState({ view: null })
@@ -152,6 +224,13 @@ export const room = {
       }
     }
     Taro.removeStorageSync(LAST_ROOM_KEY)
+    stopped = true
+    socket?.close()
+    socket = null
+    if (retryTimer) {
+      clearTimeout(retryTimer)
+      retryTimer = null
+    }
     setState({ view: null, roundResult: null, matchResult: null, chats: [] })
   },
   chat(text: string): void {

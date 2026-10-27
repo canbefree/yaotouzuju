@@ -294,6 +294,7 @@ func (e *Engine) Challenge(roomID, openid string) (string, error) {
 }
 
 // Next roundEnd → 下一轮；finished → 开新的一局。
+// Next 结算后点「下一轮」：本人置为准备，所有人到齐才真正开下一轮。
 func (e *Engine) Next(roomID, openid string) (string, error) {
 	e.mu.Lock()
 	room, ok := e.rooms[roomID]
@@ -301,15 +302,21 @@ func (e *Engine) Next(roomID, openid string) (string, error) {
 		e.mu.Unlock()
 		return "", newErr("ROOM_NOT_FOUND", "房间不存在或已解散", 404)
 	}
-	if e.findActiveLocked(room, openid) == nil {
+	p := e.findActiveLocked(room, openid)
+	if p == nil {
 		e.mu.Unlock()
 		return "", newErr("NOT_IN_ROOM", "你不在这个房间里", 400)
 	}
 	switch room.Status {
-	case StatusFinish:
-		e.beginMatchLocked(room)
-	case StatusRound:
-		e.startRoundLocked(room)
+	case StatusFinish, StatusRound:
+		p.NextReady = true
+		if e.allNextReadyLocked(room) {
+			if room.Status == StatusFinish {
+				e.beginMatchLocked(room)
+			} else {
+				e.startRoundLocked(room)
+			}
+		}
 	default:
 		e.mu.Unlock()
 		return "", newErr("BAD_STATUS", "当前不能开下一轮", 400)
@@ -317,6 +324,22 @@ func (e *Engine) Next(roomID, openid string) (string, error) {
 	e.mu.Unlock()
 	e.emit(roomID, Event{Type: EvRoom, RoomID: roomID})
 	return roomID, nil
+}
+
+// allNextReadyLocked 所有在线玩家都点了「下一轮」。
+// 掉线的人不阻塞，等他们回来直接进入下一轮。
+func (e *Engine) allNextReadyLocked(room *Room) bool {
+	n := 0
+	for _, p := range room.Players {
+		if p.Left || !p.Connected {
+			continue
+		}
+		if !p.NextReady {
+			return false
+		}
+		n++
+	}
+	return n >= 2
 }
 
 // Leave 离开房间；返回是否已解散。
@@ -356,6 +379,15 @@ func (e *Engine) Leave(roomID, openid string) (deleted bool, err error) {
 				}
 			}
 			room.Players = filtered
+		}
+	}
+	if room.Status == StatusRound || room.Status == StatusFinish {
+		if e.allNextReadyLocked(room) {
+			if room.Status == StatusFinish {
+				e.beginMatchLocked(room)
+			} else {
+				e.startRoundLocked(room)
+			}
 		}
 	}
 	remaining := 0
@@ -518,6 +550,7 @@ func (e *Engine) startRoundLocked(room *Room) {
 	room.BidHistory = []Bid{}
 	room.RoundResult = nil
 	for _, p := range room.Players {
+		p.NextReady = false
 		if p.Left {
 			p.Dice = nil
 			continue
@@ -662,7 +695,7 @@ func (e *Engine) viewLocked(room *Room, openid string) *View {
 		}
 		players = append(players, ViewPlayer{
 			OpenID: p.OpenID, Nickname: p.Nickname, Avatar: p.Avatar, Seat: p.Seat,
-			Score: p.Score, Ready: p.Ready, Connected: p.Connected, Left: p.Left,
+			Score: p.Score, Ready: p.Ready, NextReady: p.NextReady, Connected: p.Connected, Left: p.Left,
 			DiceCount: diceCount, Dice: dice,
 		})
 	}

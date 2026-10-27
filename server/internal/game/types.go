@@ -40,6 +40,8 @@ type Player struct {
 	Seat      int    `json:"seat"`
 	Score     int    `json:"score"`
 	Ready     bool   `json:"ready"`
+	// NextReady 结算后点了「下一轮/准备」，等所有人到齐才开下一轮。
+	NextReady bool   `json:"nextReady"`
 	Connected bool   `json:"connected"`
 	Left      bool   `json:"left"`
 	Dice      []int  `json:"dice"`
@@ -139,6 +141,7 @@ type ViewPlayer struct {
 	Seat      int    `json:"seat"`
 	Score     int    `json:"score"`
 	Ready     bool   `json:"ready"`
+	NextReady bool   `json:"nextReady"`
 	Connected bool   `json:"connected"`
 	Left      bool   `json:"left"`
 	DiceCount int    `json:"diceCount"`

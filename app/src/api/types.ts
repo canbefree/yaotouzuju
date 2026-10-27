@@ -76,6 +76,8 @@ export interface ViewPlayer {
   seat: number
   score: number
   ready: boolean
+  /** 结算后已点「下一轮/准备」 */
+  nextReady?: boolean
   connected: boolean
   left: boolean
   diceCount: number

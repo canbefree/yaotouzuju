@@ -33,6 +33,15 @@ export default function Room() {
   const active = view?.players.filter((p) => !p.left) || []
   const isHost = view ? view.hostOpenid === getProfile()?.openid : false
   const isMyTurn = !!view && view.status === 'playing' && view.turnSeat === view.mySeat
+  const anyNextReady = active.some((p) => p.nextReady)
+  const iAmNextReady = !!me?.nextReady
+  const nextLabel = iAmNextReady
+    ? '已准备，等待他人'
+    : anyNextReady
+      ? '准备'
+      : view?.status === 'finished'
+        ? '再来一局'
+        : '下一轮'
   const per = view?.dicePerPlayer || 5
   const totalDice = active.length * per
 
@@ -170,8 +179,12 @@ export default function Room() {
                 <Dice key={i} value={p.dice ? p.dice[i] : 0} size={44} zhai={isPillar} />
               ))}
             </View>
-            {view.status === 'waiting' ? (
-              <Text className={`seat-ready ${p.ready ? 'on' : ''}`}>{p.ready ? '已准备' : '未准备'}</Text>
+            {view.status === 'waiting' || view.status === 'roundEnd' || view.status === 'finished' ? (
+              <Text
+                className={`seat-ready ${(view.status === 'waiting' ? p.ready : p.nextReady) ? 'on' : ''}`}
+              >
+                {(view.status === 'waiting' ? p.ready : p.nextReady) ? '已准备' : '未准备'}
+              </Text>
             ) : null}
           </View>
         ))}
@@ -278,8 +291,11 @@ export default function Room() {
 
         {view.status === 'roundEnd' || view.status === 'finished' ? (
           <>
-            <View className="btn btn-primary room-act" onClick={onNext}>
-              {view.status === 'finished' ? '再来一局' : '下一轮'}
+            <View
+              className={`btn btn-primary room-act ${iAmNextReady ? 'btn-disabled' : ''}`}
+              onClick={() => !iAmNextReady && onNext()}
+            >
+              {nextLabel}
             </View>
             <View className="btn btn-ghost room-act" onClick={onLeave}>
               返回大厅
@@ -319,14 +335,24 @@ export default function Room() {
       />
 
       {/* 结算 */}
-      {state.roundResult || state.matchResult ? (
-        <ResultOverlay state={state} onNext={onNext} onLeave={onLeave} />
+      {(state.roundResult || state.matchResult || view.roundResult || view.matchResult) && !iAmNextReady ? (
+        <ResultOverlay state={state} onNext={onNext} onLeave={onLeave} nextLabel={nextLabel} />
       ) : null}
     </View>
   )
 }
 
-function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: () => void; onLeave: () => void }) {
+function ResultOverlay({
+  state,
+  onNext,
+  onLeave,
+  nextLabel
+}: {
+  state: RoomState
+  onNext: () => void
+  onLeave: () => void
+  nextLabel: string
+}) {
   const view = state.view
   if (!view) return null
   const match = state.matchResult || view.matchResult
@@ -358,7 +384,7 @@ function ResultOverlay({ state, onNext, onLeave }: { state: RoomState; onNext: (
       actual={round?.actual ?? 0}
       bidTrue={round?.bidTrue ?? false}
       winnerName={winnerName}
-      nextLabel={match ? '再来一局' : '下一轮'}
+      nextLabel={nextLabel}
       onNext={onNext}
       onLeave={onLeave}
       sessionKey={`${view.round}-${match ? 'm' : 'r'}`}
