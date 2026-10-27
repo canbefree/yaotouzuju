@@ -27,12 +27,6 @@ export interface Bid {
   at: number
 }
 
-export interface Delta {
-  seat: number
-  delta: number
-  score: number
-}
-
 export interface Reveal {
   seat: number
   openid: string
@@ -51,7 +45,8 @@ export interface RoundResult {
   pillarFace: number
   winnerSeat: number
   loserSeat: number
-  deltas: Delta[]
+  /** 输家本轮的惩罚内容（服务端随机） */
+  penalty: string
   reveal: Reveal[]
 }
 
@@ -60,7 +55,7 @@ export interface RankingRow {
   openid: string
   nickname: string
   avatar: string
-  score: number
+  penalties: number
 }
 
 export interface MatchResult {
@@ -74,7 +69,8 @@ export interface ViewPlayer {
   nickname: string
   avatar: string
   seat: number
-  score: number
+  /** 累计受罚次数 */
+  penalties: number
   ready: boolean
   /** 结算后已点「下一轮/准备」 */
   nextReady?: boolean

@@ -231,11 +231,12 @@ func (s *Store) GetUser(openid string) (nickname, avatar string, ok bool) {
 	return nickname, avatar, true
 }
 
+// recordRound 记一轮战绩：points 存「受罚次数」，wins 存「没受罚」次数。
 func (s *Store) recordRound(room *game.Room, rr *game.RoundResult) {
-	for _, d := range rr.Deltas {
+	for _, rv := range rr.Reveal {
 		var p *game.Player
 		for _, q := range room.Players {
-			if q.Seat == d.Seat {
+			if q.Seat == rv.Seat {
 				p = q
 				break
 			}
@@ -244,8 +245,10 @@ func (s *Store) recordRound(room *game.Room, rr *game.RoundResult) {
 			continue
 		}
 		s.upsertUserTx(p.OpenID, p.Nickname, p.Avatar)
-		wins := 0
-		if d.Seat == rr.WinnerSeat {
+		penalty, wins := 0, 0
+		if rv.Seat == rr.LoserSeat {
+			penalty = 1
+		} else {
 			wins = 1
 		}
 		_, err := s.db.Exec(
@@ -256,7 +259,7 @@ func (s *Store) recordRound(room *game.Room, rr *game.RoundResult) {
 			   wins   = scores.wins + excluded.wins,
 			   rounds = scores.rounds + 1,
 			   updated_at = excluded.updated_at`,
-			p.OpenID, string(room.Mode), d.Delta, wins, time.Now().UnixMilli(),
+			p.OpenID, string(room.Mode), penalty, wins, time.Now().UnixMilli(),
 		)
 		if err != nil {
 			log.Printf("[store] recordRound %s 失败: %v", p.OpenID, err)
@@ -280,7 +283,7 @@ func (s *Store) recordMatch(room *game.Room, mr *game.MatchResult) {
 		s.upsertUserTx(p.OpenID, p.Nickname, p.Avatar)
 		if _, err := s.db.Exec(
 			`INSERT INTO match_players (match_id, openid, nickname, score, rank) VALUES (?, ?, ?, ?, ?)`,
-			matchID, p.OpenID, p.Nickname, p.Score, i+1,
+			matchID, p.OpenID, p.Nickname, p.Penalties, i+1,
 		); err != nil {
 			log.Printf("[store] recordMatch player 失败: %v", err)
 		}

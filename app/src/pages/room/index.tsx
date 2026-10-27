@@ -164,7 +164,6 @@ export default function Room() {
         </Text>
         {view.round > 0 ? <Text className="tag room-info-round">第 {view.round} 轮</Text> : null}
         <View className="fill" />
-        <Text className="tag room-info-target">目标 {view.targetScore} 分</Text>
       </View>
 
       {/* 对手 */}
@@ -173,7 +172,7 @@ export default function Room() {
           <View key={p.seat} className={`seat ${view.turnSeat === p.seat && view.status === 'playing' ? 'seat-turn' : ''}`}>
             <View className={`seat-avatar ${p.connected ? '' : 'seat-offline'}`}>{p.avatar || '🎲'}</View>
             <Text className="seat-name">{p.nickname}</Text>
-            <Text className="seat-score">{p.score} 分</Text>
+            <Text className="seat-score">{p.penalties} 罚</Text>
             <View className="seat-dice">
               {Array.from({ length: p.diceCount }).map((_, i) => (
                 <Dice key={i} value={p.dice ? p.dice[i] : 0} size={44} zhai={isPillar} />
@@ -226,7 +225,7 @@ export default function Room() {
       <View className="room-me">
         <View className="room-me-head">
           <Text className="room-me-name">{me?.nickname}（我）</Text>
-          <Text className="room-me-score">{me?.score ?? 0} 分</Text>
+          <Text className="room-me-score">{me?.penalties ?? 0} 罚</Text>
         </View>
         <View className="room-me-dice">
           {view.status === 'waiting'
@@ -358,25 +357,11 @@ function ResultOverlay({
   const match = state.matchResult || view.matchResult
   const round = state.roundResult || view.roundResult
 
-  const ranking = match
-    ? match.ranking
-    : (round?.deltas || [])
-        .slice()
-        .sort((a, b) => b.score - a.score)
-        .map((d) => {
-          const p = view.players.find((x) => x.seat === d.seat)
-          return { seat: d.seat, openid: p?.openid || '', nickname: p?.nickname || '', avatar: p?.avatar || '', score: d.score, delta: d.delta }
-        })
-
   const players = round ? round.reveal.map((r) => ({ seat: r.seat, name: r.nickname, dice: r.dice })) : []
-  const winnerSeat = match ? match.winnerSeat : round ? round.winnerSeat : -1
-  const winnerName =
-    (match
-      ? view.players.find((p) => p.seat === match.winnerSeat)?.nickname
-      : round
-        ? view.players.find((p) => p.seat === round.winnerSeat)?.nickname
-        : '') || ''
-  const winnerIsMe = winnerSeat >= 0 && winnerSeat === view.mySeat
+  const loserName = round ? view.players.find((p) => p.seat === round.loserSeat)?.nickname || '' : ''
+  const board = view.players
+    .filter((p) => !p.left)
+    .map((p) => ({ name: p.nickname, count: p.penalties, me: p.seat === view.mySeat }))
 
   return (
     <ResultReveal
@@ -385,28 +370,14 @@ function ResultOverlay({
       players={players}
       actual={round?.actual ?? 0}
       bidTrue={round?.bidTrue ?? false}
-      winnerName={winnerName}
-      winnerIsMe={winnerIsMe}
+      penalty={round?.penalty || ''}
+      loserName={loserName}
+      loserIsMe={!!round && round.loserSeat === view.mySeat}
+      board={board}
       nextLabel={nextLabel}
       onNext={onNext}
       onLeave={onLeave}
       sessionKey={`${view.round}-${match ? 'm' : 'r'}`}
-      footer={
-        <View className="result-list">
-          {ranking.map((r, i) => (
-            <View key={r.seat} className="result-row">
-              <Text className="result-rank">{i + 1}</Text>
-              <View className="result-avatar">{r.avatar || '🎲'}</View>
-              <Text className="result-name">
-                {r.nickname}
-                {r.seat === view.mySeat ? '（你）' : ''}
-              </Text>
-              <View className="fill" />
-              <Text className="result-score">{r.score}</Text>
-            </View>
-          ))}
-        </View>
-      }
     />
   )
 }

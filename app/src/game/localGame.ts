@@ -7,7 +7,7 @@ export interface LocalPlayer {
   name: string
   avatar: string
   dice: number[]
-  score: number
+  penalties: number
   isAI: boolean
 }
 
@@ -15,7 +15,6 @@ export interface Bid {
   seat: number
   kind: BidKind
   quantity: number
-  /** 斋时为 0 */
   face: number
 }
 
@@ -28,7 +27,7 @@ export interface RoundResult {
   pillarFace: number
   winnerSeat: number
   loserSeat: number
-  deltas: { seat: number; delta: number; score: number }[]
+  penalty: string
   reveal: { seat: number; name: string; dice: number[] }[]
 }
 
@@ -41,16 +40,27 @@ export interface LocalState {
   round: number
   status: LocalStatus
   result: RoundResult | null
-  targetScore: number
   dicePerPlayer: number
-  winnerSeat: number | null
 }
 
 const AVATARS = ['😀', '😎', '🤠', '🐱', '🐶', '🦊', '🐼', '🐯']
 const AI_NAMES = ['阿宝', '小美', '阿杰', '小林', '大力']
 
-const SCORE_WIN = 20
-const SCORE_LOSE = -10
+/** 输家惩罚池（与后端保持一致的口味，本地局随机抽）。 */
+export const PUNISHMENTS = [
+  '罚喝一杯（饮料也算）',
+  '真心话：回答大家一个问题',
+  '大冒险：做一个指定动作',
+  '学三声猫叫',
+  '夸一圈在场的人',
+  '表演 10 秒才艺',
+  '给左手边的人捶背 10 秒',
+  '用方言说一句「我输了」'
+]
+
+export function randomPenalty(): string {
+  return PUNISHMENTS[Math.floor(Math.random() * PUNISHMENTS.length)]
+}
 
 export function rollDice(count: number): number[] {
   const out: number[] = []
@@ -97,7 +107,7 @@ export function isValidRaise(bid: Bid | null, kind: BidKind, q: number, f: numbe
   return false
 }
 
-export function createLocalGame(playerCount: number, dicePerPlayer: number, targetScore = 100, myName = '我'): LocalState {
+export function createLocalGame(playerCount: number, dicePerPlayer: number, myName = '我'): LocalState {
   const players: LocalPlayer[] = []
   for (let i = 0; i < playerCount; i += 1) {
     players.push({
@@ -105,7 +115,7 @@ export function createLocalGame(playerCount: number, dicePerPlayer: number, targ
       name: i === 0 ? myName : AI_NAMES[(i - 1) % AI_NAMES.length],
       avatar: i === 0 ? '😀' : AVATARS[(i + 1) % AVATARS.length],
       dice: [],
-      score: 0,
+      penalties: 0,
       isAI: i !== 0
     })
   }
@@ -116,9 +126,7 @@ export function createLocalGame(playerCount: number, dicePerPlayer: number, targ
     round: 0,
     status: 'playing',
     result: null,
-    targetScore,
-    dicePerPlayer,
-    winnerSeat: null
+    dicePerPlayer
   })
 }
 
@@ -132,16 +140,11 @@ export function startRound(s: LocalState): LocalState {
     bid: null,
     result: null,
     status: 'playing',
-    winnerSeat: null,
     turn: (round - 1) % players.length
   }
 }
 
 export function nextRound(s: LocalState): LocalState {
-  if (s.winnerSeat !== null) {
-    const players = s.players.map((p) => ({ ...p, score: 0 }))
-    return startRound({ ...s, players, round: 0 })
-  }
   return startRound(s)
 }
 
@@ -163,10 +166,9 @@ export function challenge(s: LocalState, seat: number): LocalState {
   const bidTrue = actual >= bid.quantity
   const winnerSeat = bidTrue ? bid.seat : seat
   const loserSeat = bidTrue ? seat : bid.seat
-  const players = s.players.map((p) => {
-    const delta = p.seat === winnerSeat ? SCORE_WIN : SCORE_LOSE
-    return { ...p, score: p.score + delta }
-  })
+  const players = s.players.map((p) =>
+    p.seat === loserSeat ? { ...p, penalties: p.penalties + 1 } : p
+  )
   const result: RoundResult = {
     bidderSeat: bid.seat,
     challengerSeat: seat,
@@ -176,12 +178,10 @@ export function challenge(s: LocalState, seat: number): LocalState {
     pillarFace,
     winnerSeat,
     loserSeat,
-    deltas: players.map((p) => ({ seat: p.seat, delta: p.seat === winnerSeat ? SCORE_WIN : SCORE_LOSE, score: p.score })),
+    penalty: randomPenalty(),
     reveal: players.map((p) => ({ seat: p.seat, name: p.name, dice: [...p.dice] }))
   }
-  const reached = players.filter((p) => p.score >= s.targetScore)
-  const winnerSeatFinal = reached.length > 0 ? players.slice().sort((a, b) => b.score - a.score)[0].seat : null
-  return { ...s, players, status: 'roundEnd', result, winnerSeat: winnerSeatFinal }
+  return { ...s, players, status: 'roundEnd', result }
 }
 
 export type AIAction =

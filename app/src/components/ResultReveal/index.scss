@@ -171,11 +171,66 @@
   color: rgba(74, 53, 36, 0.6);
 }
 
-.rr-winner {
+.rr-loser {
+  width: 100%;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.rr-loser-name {
   font-size: 30px;
+  font-weight: 900;
+  color: #d9480f;
+}
+
+/* 惩罚卡：翻出来的一瞬间才有仪式感 */
+.rr-penalty-card {
+  width: 100%;
+  padding: 16px 22px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffe3a3 0%, #ffc552 100%);
+  box-shadow: 0 6px 0 #e0a03a;
+  animation: rr-flip 0.55s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+
+@keyframes rr-flip {
+  0% {
+    transform: rotateY(90deg) scale(0.85);
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.rr-penalty-text {
+  display: block;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 900;
+  color: #7a4a12;
+}
+
+.rr-board {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+}
+
+.rr-board-item {
+  font-size: 22px;
+  color: rgba(74, 53, 36, 0.6);
+}
+
+.rr-board-item.me {
+  color: #e8842a;
   font-weight: 800;
-  color: var(--ink);
-  margin-top: 4px;
 }
 
 .rr-actions {
@@ -197,25 +252,4 @@
   margin-top: 18px;
   font-size: 22px;
   color: rgba(74, 53, 36, 0.4);
-}
-
-.rr-deltas {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px 20px;
-  margin-top: 10px;
-}
-
-.rr-delta {
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.rr-delta.good {
-  color: #2f9e44;
-}
-
-.rr-delta.bad {
-  color: #d9480f;
 }

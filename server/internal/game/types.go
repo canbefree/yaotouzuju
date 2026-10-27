@@ -38,7 +38,8 @@ type Player struct {
 	Nickname  string `json:"nickname"`
 	Avatar    string `json:"avatar"`
 	Seat      int    `json:"seat"`
-	Score     int    `json:"score"`
+	// Penalties 累计受罚次数（每轮只有输家 +1）。
+	Penalties int    `json:"penalties"`
 	Ready     bool   `json:"ready"`
 	// NextReady 结算后点了「下一轮/准备」，等所有人到齐才开下一轮。
 	NextReady bool   `json:"nextReady"`
@@ -66,13 +67,6 @@ type Bid struct {
 	At       int64   `json:"at"`
 }
 
-// Delta 单轮结算里某位玩家的分数变化。
-type Delta struct {
-	Seat  int `json:"seat"`
-	Delta int `json:"delta"`
-	Score int `json:"score"`
-}
-
 // Reveal 结算时亮出的某位玩家的骰子。
 type Reveal struct {
 	Seat     int    `json:"seat"`
@@ -93,8 +87,9 @@ type RoundResult struct {
 	PillarFace int      `json:"pillarFace"`
 	WinnerSeat int      `json:"winnerSeat"`
 	LoserSeat  int      `json:"loserSeat"`
-	Deltas     []Delta  `json:"deltas"`
-	Reveal     []Reveal `json:"reveal"`
+	// Penalty 输家本轮的惩罚内容（服务端随机，全场一致）。
+	Penalty string   `json:"penalty"`
+	Reveal  []Reveal `json:"reveal"`
 }
 
 // RankingRow 一局结束的名次行。
@@ -102,8 +97,8 @@ type RankingRow struct {
 	Seat     int    `json:"seat"`
 	OpenID   string `json:"openid"`
 	Nickname string `json:"nickname"`
-	Avatar   string `json:"avatar"`
-	Score    int    `json:"score"`
+	Avatar    string `json:"avatar"`
+	Penalties int    `json:"penalties"`
 }
 
 // MatchResult 整局结果。
@@ -139,7 +134,7 @@ type ViewPlayer struct {
 	Nickname  string `json:"nickname"`
 	Avatar    string `json:"avatar"`
 	Seat      int    `json:"seat"`
-	Score     int    `json:"score"`
+	Penalties int    `json:"penalties"`
 	Ready     bool   `json:"ready"`
 	NextReady bool   `json:"nextReady"`
 	Connected bool   `json:"connected"`

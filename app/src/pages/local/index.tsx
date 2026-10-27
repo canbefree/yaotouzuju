@@ -24,8 +24,9 @@ interface RecordRow {
   at: number
   players: number
   dice: number
-  win: boolean
-  score: number
+  lost: boolean
+  penalty: string
+  penalties: number
 }
 
 const REC_KEY = 'yaotou.local.records'
@@ -35,7 +36,6 @@ export default function Local() {
   const [game, setGame] = useState<LocalState | null>(null)
   const [players, setPlayers] = useState(2)
   const [dice, setDice] = useState(5)
-  const [target, setTarget] = useState(100)
   const [showBid, setShowBid] = useState(false)
   const [zhaiOnly, setZhaiOnly] = useState(false)
   const [rolling, setRolling] = useState(false)
@@ -80,28 +80,28 @@ export default function Local() {
     return () => clearTimeout(timer)
   }, [game])
 
-  // 记录本地战绩
+  // 每轮结算记一条本地战绩
   useEffect(() => {
-    if (!game || game.winnerSeat === null) return
+    if (!game?.result) return
     const row: RecordRow = {
       at: Date.now(),
       players: game.players.length,
       dice: game.dicePerPlayer,
-      win: game.winnerSeat === 0,
-      score: me?.score ?? 0
+      lost: game.result.loserSeat === 0,
+      penalty: game.result.loserSeat === 0 ? game.result.penalty : '',
+      penalties: game.players.find((p) => p.seat === 0)?.penalties ?? 0
     }
     const list: RecordRow[] = Taro.getStorageSync(REC_KEY) || []
-    const next = [row, ...list].slice(0, 20)
-    Taro.setStorageSync(REC_KEY, next)
-  }, [game?.winnerSeat])
+    Taro.setStorageSync(REC_KEY, [row, ...list].slice(0, 20))
+  }, [game?.result])
 
   const openRecords = () => {
     setRecords((Taro.getStorageSync(REC_KEY) as RecordRow[]) || [])
     setPhase('records')
   }
 
-  const start = (pc: number, d: number, t: number) => {
-    setGame(createLocalGame(pc, d, t))
+  const start = (pc: number, d: number) => {
+    setGame(createLocalGame(pc, d))
     setPhase('game')
   }
 
@@ -132,7 +132,7 @@ export default function Local() {
             <Text className="local-hero-sub">练习技巧 · 挑战 AI · 自由畅玩</Text>
           </View>
 
-          <View className="local-item card" onClick={() => start(2, 5, 100)}>
+          <View className="local-item card" onClick={() => start(2, 5)}>
             <View className="local-item-icon">🤖</View>
             <View className="local-item-body">
               <Text className="local-item-title">单人挑战</Text>
@@ -145,8 +145,7 @@ export default function Local() {
             <Text className="local-config-title">自由模式</Text>
             <Row label="玩家人数" value={players} min={2} max={5} onChange={setPlayers} />
             <Row label="每人骰子" value={dice} min={2} max={5} onChange={setDice} />
-            <Row label="目标分数" value={target} min={20} max={200} step={20} onChange={setTarget} />
-            <View className="btn btn-primary local-start" onClick={() => start(players, dice, target)}>
+            <View className="btn btn-primary local-start" onClick={() => start(players, dice)}>
               开始自由模式
             </View>
           </View>
@@ -177,11 +176,13 @@ export default function Local() {
               <View key={i} className="card local-rec">
                 <View className="fill">
                   <Text className="local-rec-title">
-                    {r.win ? '胜利' : '未获胜'} · {r.players}人 / {r.dice}骰
+                    {r.lost ? '受罚' : '安全'} · {r.players}人 / {r.dice}骰
                   </Text>
                   <Text className="local-rec-sub">{new Date(r.at).toLocaleString()}</Text>
                 </View>
-                <Text className={`local-rec-score ${r.win ? 'win' : ''}`}>{r.score} 分</Text>
+                <Text className={`local-rec-score ${r.lost ? '' : 'win'}`}>
+                  {r.lost ? r.penalty || '受罚' : '免罚'}
+                </Text>
               </View>
             ))
           )}
@@ -202,7 +203,7 @@ export default function Local() {
           <View key={p.seat} className={`local-seat ${game.turn === p.seat && game.status === 'playing' ? 'on' : ''}`}>
             <View className="local-seat-avatar">{p.avatar}</View>
             <Text className="local-seat-name">{p.name}</Text>
-            <Text className="local-seat-score">{p.score}</Text>
+            <Text className="local-seat-score">{p.penalties} 罚</Text>
             <View className="local-seat-dice">
               {p.dice.map((_, i) => (
                 <Dice key={i} value={0} size={44} zhai={game.bid?.kind === 'pillar'} />
@@ -228,7 +229,7 @@ export default function Local() {
 
       <View className="local-me">
         <View className="local-me-head">
-          <Text>我（{me?.score ?? 0} 分）</Text>
+          <Text>我（{me?.penalties ?? 0} 罚）</Text>
         </View>
         <View className="local-me-dice">
           {myDice.map((d, i) => (
@@ -275,7 +276,7 @@ export default function Local() {
           </>
         ) : (
           <View className="btn btn-primary local-act" onClick={onNext}>
-            {game.winnerSeat !== null ? '再来一局' : '下一轮'}
+            下一轮
           </View>
         )}
       </View>
@@ -295,30 +296,20 @@ export default function Local() {
 
       {game.status === 'roundEnd' && game.result ? (
         <ResultReveal
-          title={game.winnerSeat !== null ? '游戏结束！' : `第 ${game.round} 轮结束`}
+          title={`第 ${game.round} 轮结束`}
           bid={game.result.bid}
           players={game.result.reveal.map((r) => ({ seat: r.seat, name: r.name, dice: r.dice }))}
           actual={game.result.actual}
           bidTrue={game.result.bidTrue}
-          winnerName={game.players.find((p) => p.seat === game.result!.winnerSeat)?.name || ''}
-          nextLabel={game.winnerSeat !== null ? '再来一局' : '下一轮'}
+          penalty={game.result.penalty}
+          loserName={game.players.find((p) => p.seat === game.result!.loserSeat)?.name || ''}
+          loserIsMe={game.result.loserSeat === 0}
+          board={game.players.map((p) => ({ name: p.name, count: p.penalties, me: p.seat === 0 }))}
+          nextLabel="下一轮"
           onNext={onNext}
           onLeave={() => setPhase('menu')}
           leaveLabel="返回"
-          sessionKey={`${game.round}-${game.winnerSeat ?? 'r'}`}
-          footer={
-            <View className="rr-deltas">
-              {game.players.map((p) => {
-                const d = game.result?.deltas.find((x) => x.seat === p.seat)?.delta ?? 0
-                return (
-                  <Text key={p.seat} className={`rr-delta ${d > 0 ? 'good' : 'bad'}`}>
-                    {p.name} {d > 0 ? '+' : ''}
-                    {d}
-                  </Text>
-                )
-              })}
-            </View>
-          }
+          sessionKey={game.round}
         />
       ) : null}
     </View>

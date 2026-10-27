@@ -102,16 +102,16 @@ export default function Settings() {
         </View>
 
         <View className="card settings-card">
-          <Text className="settings-label">排行榜 · 吹牛骰</Text>
+          <Text className="settings-label">受罚榜 · 吹牛骰</Text>
           {rank.length === 0 ? (
-            <Text className="settings-empty">暂无战绩，快去开一局</Text>
+            <Text className="settings-empty">暂无记录，快去开一局</Text>
           ) : (
             rank.slice(0, 5).map((r) => (
               <View key={r.openid} className="settings-rank">
                 <Text className="settings-rank-no">{r.rank}</Text>
                 <Text className="settings-rank-name">{r.nickname}</Text>
                 <View className="fill" />
-                <Text className="settings-rank-points">{r.points} 分</Text>
+                <Text className="settings-rank-points">受罚 {r.points} 次</Text>
               </View>
             ))
           )}

@@ -5,22 +5,33 @@ import "math/rand"
 // DiceFaces 骰子面数。
 const DiceFaces = 6
 
-// Score 结算分值：赢家加分，其余玩家扣分（对齐设计稿 +20 / -10）。
-const (
-	ScoreWin  = 20
-	ScoreLose = -10
-)
-
 // DefaultDicePerPlayer 默认每人骰子数。
 const DefaultDicePerPlayer = 5
 
 // Modes 玩法（只保留一种：吹牛骰，骰子数量可调）。
 var Modes = map[ModeID]ModeConfig{
 	ModeClassic: {
-		ID: ModeClassic, Name: "吹牛骰", Desc: "先到 100 分者胜，每人骰子数量可调",
+		ID: ModeClassic, Name: "吹牛骰", Desc: "每轮输家接受惩罚，每人骰子数量可调",
 		DicePerPlayer: DefaultDicePerPlayer, MinDice: 2, MaxDice: 8,
 		TargetScore: 100, MinPlayers: 2, MaxPlayers: 5,
 	},
+}
+
+// Punishments 输家惩罚池（服务端随机抽一个，全场看到同一张）。
+var Punishments = []string{
+	"罚喝一杯（饮料也算）",
+	"真心话：回答大家一个问题",
+	"大冒险：做一个指定动作",
+	"学三声猫叫",
+	"夸一圈在场的人",
+	"表演 10 秒才艺",
+	"给左手边的人捶背 10 秒",
+	"用方言说一句「我输了」",
+}
+
+// RandomPenalty 抽一个惩罚。
+func RandomPenalty() string {
+	return Punishments[rand.Intn(len(Punishments))]
 }
 
 // ClampDice 把每人骰子数限制到合法范围（0 或非法值取默认 5）。

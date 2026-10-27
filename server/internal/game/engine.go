@@ -366,7 +366,7 @@ func (e *Engine) Leave(roomID, openid string) (deleted bool, err error) {
 				room.RoundResult = nil
 				for _, q := range room.Players {
 					if !q.Left {
-						q.Score = 0
+						q.Penalties = 0
 						q.Dice = nil
 					}
 				}
@@ -532,7 +532,7 @@ func (e *Engine) maybeAutoStartLocked(room *Room) {
 
 func (e *Engine) beginMatchLocked(room *Room) {
 	for _, p := range room.Players {
-		p.Score = 0
+		p.Penalties = 0
 		p.Ready = false
 		p.Left = false
 	}
@@ -616,41 +616,20 @@ func (e *Engine) settleLocked(room *Room, bidderSeat, challengerSeat int) Event 
 		loserSeat = challengerSeat
 	}
 
-	deltas := make([]Delta, 0, len(active))
+	// 只有输家受罚 +1，其余人不受影响
 	reveal := make([]Reveal, 0, len(active))
 	for _, p := range active {
-		delta := ScoreLose
-		if p.Seat == winnerSeat {
-			delta = ScoreWin
+		if p.Seat == loserSeat {
+			p.Penalties++
 		}
-		p.Score += delta
-		deltas = append(deltas, Delta{Seat: p.Seat, Delta: delta, Score: p.Score})
 		reveal = append(reveal, Reveal{Seat: p.Seat, OpenID: p.OpenID, Nickname: p.Nickname, Dice: append([]int{}, p.Dice...)})
 	}
 	room.RoundResult = &RoundResult{
 		Round: room.Round, BidderSeat: bidderSeat, ChallengerSeat: challengerSeat, Bid: bid,
 		Actual: actual, BidTrue: bidTrue, PillarFace: pillarFace, WinnerSeat: winnerSeat, LoserSeat: loserSeat,
-		Deltas: deltas, Reveal: reveal,
+		Penalty: RandomPenalty(), Reveal: reveal,
 	}
 	room.Status = StatusRound
-
-	for _, p := range active {
-		if p.Score >= room.TargetScore {
-			ranking := make([]RankingRow, 0, len(active))
-			sorted := append([]*Player{}, active...)
-			for i := 1; i < len(sorted); i++ {
-				for j := i; j > 0 && (sorted[j-1].Score < sorted[j].Score || (sorted[j-1].Score == sorted[j].Score && sorted[j-1].Seat > sorted[j].Seat)); j-- {
-					sorted[j-1], sorted[j] = sorted[j], sorted[j-1]
-				}
-			}
-			for _, q := range sorted {
-				ranking = append(ranking, RankingRow{Seat: q.Seat, OpenID: q.OpenID, Nickname: q.Nickname, Avatar: q.Avatar, Score: q.Score})
-			}
-			room.MatchResult = &MatchResult{WinnerSeat: sorted[0].Seat, Rounds: room.Round, Ranking: ranking}
-			room.Status = StatusFinish
-			return Event{Type: EvMatchEnd, RoomID: room.RoomID}
-		}
-	}
 
 	seats := e.activeSeatsLocked(room)
 	room.TurnSeat = seats[room.Round%len(seats)]
@@ -695,7 +674,7 @@ func (e *Engine) viewLocked(room *Room, openid string) *View {
 		}
 		players = append(players, ViewPlayer{
 			OpenID: p.OpenID, Nickname: p.Nickname, Avatar: p.Avatar, Seat: p.Seat,
-			Score: p.Score, Ready: p.Ready, NextReady: p.NextReady, Connected: p.Connected, Left: p.Left,
+			Penalties: p.Penalties, Ready: p.Ready, NextReady: p.NextReady, Connected: p.Connected, Left: p.Left,
 			DiceCount: diceCount, Dice: dice,
 		})
 	}

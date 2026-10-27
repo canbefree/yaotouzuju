@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { View, Text } from '@tarojs/components'
 
 import Dice from '../Dice'
@@ -19,15 +19,18 @@ interface Props {
   players: RevealPlayer[]
   actual: number
   bidTrue: boolean
-  winnerName: string
-  /** 赢家是不是自己：名字后加「（你）」 */
-  winnerIsMe?: boolean
+  /** 本轮惩罚内容 */
+  penalty: string
+  /** 输家名字 */
+  loserName: string
+  /** 输家是不是自己 */
+  loserIsMe?: boolean
+  /** 累计受罚榜 */
+  board?: { name: string; count: number; me?: boolean }[]
   nextLabel: string
   onNext: () => void
   onLeave?: () => void
   leaveLabel?: string
-  /** 揭晓完成后追加的内容（排行榜、分数变化） */
-  footer?: ReactNode
   /** 换局时重置揭晓流程 */
   sessionKey?: string | number
 }
@@ -42,13 +45,14 @@ export default function ResultReveal({
   players,
   actual,
   bidTrue,
-  winnerName,
-  winnerIsMe = false,
+  penalty,
+  loserName,
+  loserIsMe = false,
+  board,
   nextLabel,
   onNext,
   onLeave,
   leaveLabel = '返回大厅',
-  footer,
   sessionKey
 }: Props) {
   const [shown, setShown] = useState(0)
@@ -143,11 +147,26 @@ export default function ResultReveal({
                 实际 {actual} 个，喊 {bid.quantity} 个
               </Text>
             ) : null}
-            <Text className="rr-winner">
-              🏆 {winnerName}
-              {winnerIsMe ? '（你）' : ''} 胜
-            </Text>
-            {footer}
+            <View className="rr-loser">
+              <Text className="rr-loser-name">
+                😵 {loserName}
+                {loserIsMe ? '（你）' : ''} 受罚
+              </Text>
+              {penalty ? (
+                <View className="rr-penalty-card">
+                  <Text className="rr-penalty-text">{penalty}</Text>
+                </View>
+              ) : null}
+            </View>
+            {board && board.length > 0 ? (
+              <View className="rr-board">
+                {board.map((b, i) => (
+                  <Text key={`${b.name}-${i}`} className={`rr-board-item ${b.me ? 'me' : ''}`}>
+                    {b.name} {b.count} 罚
+                  </Text>
+                ))}
+              </View>
+            ) : null}
             <View className="rr-actions">
               <View className="btn btn-primary rr-btn" onClick={onNext}>
                 {nextLabel}

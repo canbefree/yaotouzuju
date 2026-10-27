@@ -119,19 +119,17 @@ type view struct {
 	Players []struct {
 		OpenID    string `json:"openid"`
 		Seat      int    `json:"seat"`
-		Score     int    `json:"score"`
+		Penalties int    `json:"penalties"`
 		NextReady bool   `json:"nextReady"`
 		DiceCount int    `json:"diceCount"`
 		Dice      []int  `json:"dice"`
 	} `json:"players"`
 	RoundResult *struct {
-		Actual    int   `json:"actual"`
-		BidTrue   bool  `json:"bidTrue"`
-		WinnerSeat int  `json:"winnerSeat"`
-		Deltas    []struct {
-			Seat  int `json:"seat"`
-			Delta int `json:"delta"`
-		} `json:"deltas"`
+		Actual     int    `json:"actual"`
+		BidTrue    bool   `json:"bidTrue"`
+		WinnerSeat int    `json:"winnerSeat"`
+		LoserSeat  int    `json:"loserSeat"`
+		Penalty    string `json:"penalty"`
 	} `json:"roundResult"`
 	MatchResult *struct {
 		WinnerSeat int `json:"winnerSeat"`
@@ -267,26 +265,19 @@ func TestFullGameFlow(t *testing.T) {
 	if v.RoundResult.Actual < 0 {
 		t.Fatalf("actual count invalid")
 	}
-	var winDelta, loseCount int
-	for _, d := range v.RoundResult.Deltas {
-		if d.Seat == v.RoundResult.WinnerSeat {
-			winDelta = d.Delta
-		} else {
-			loseCount++
-			if d.Delta != -10 {
-				t.Fatalf("loser delta should be -10, got %d", d.Delta)
-			}
-		}
-	}
-	if winDelta != 20 {
-		t.Fatalf("winner delta should be 20, got %d", winDelta)
-	}
-	if loseCount != 2 {
-		t.Fatalf("want 2 losers, got %d", loseCount)
+	if v.RoundResult.Penalty == "" {
+		t.Fatalf("should assign a penalty to the loser")
 	}
 	for _, p := range v.Players {
 		if len(p.Dice) != 5 {
 			t.Fatalf("all dice should be revealed at round end")
+		}
+		want := 0
+		if p.Seat == v.RoundResult.LoserSeat {
+			want = 1
+		}
+		if p.Penalties != want {
+			t.Fatalf("penalties: seat %d want %d, got %d", p.Seat, want, p.Penalties)
 		}
 	}
 
