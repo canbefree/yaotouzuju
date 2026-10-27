@@ -369,12 +369,14 @@ function ResultOverlay({
         })
 
   const players = round ? round.reveal.map((r) => ({ seat: r.seat, name: r.nickname, dice: r.dice })) : []
+  const winnerSeat = match ? match.winnerSeat : round ? round.winnerSeat : -1
   const winnerName =
     (match
       ? view.players.find((p) => p.seat === match.winnerSeat)?.nickname
       : round
         ? view.players.find((p) => p.seat === round.winnerSeat)?.nickname
         : '') || ''
+  const winnerIsMe = winnerSeat >= 0 && winnerSeat === view.mySeat
 
   return (
     <ResultReveal
@@ -384,6 +386,7 @@ function ResultOverlay({
       actual={round?.actual ?? 0}
       bidTrue={round?.bidTrue ?? false}
       winnerName={winnerName}
+      winnerIsMe={winnerIsMe}
       nextLabel={nextLabel}
       onNext={onNext}
       onLeave={onLeave}
@@ -394,7 +397,10 @@ function ResultOverlay({
             <View key={r.seat} className="result-row">
               <Text className="result-rank">{i + 1}</Text>
               <View className="result-avatar">{r.avatar || '🎲'}</View>
-              <Text className="result-name">{r.nickname}</Text>
+              <Text className="result-name">
+                {r.nickname}
+                {r.seat === view.mySeat ? '（你）' : ''}
+              </Text>
               <View className="fill" />
               <Text className="result-score">{r.score}</Text>
             </View>

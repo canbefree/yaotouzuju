@@ -20,6 +20,8 @@ interface Props {
   actual: number
   bidTrue: boolean
   winnerName: string
+  /** 赢家是不是自己：名字后加「（你）」 */
+  winnerIsMe?: boolean
   nextLabel: string
   onNext: () => void
   onLeave?: () => void
@@ -41,6 +43,7 @@ export default function ResultReveal({
   actual,
   bidTrue,
   winnerName,
+  winnerIsMe = false,
   nextLabel,
   onNext,
   onLeave,
@@ -140,7 +143,10 @@ export default function ResultReveal({
                 实际 {actual} 个，喊 {bid.quantity} 个
               </Text>
             ) : null}
-            <Text className="rr-winner">🏆 {winnerName} 胜</Text>
+            <Text className="rr-winner">
+              🏆 {winnerName}
+              {winnerIsMe ? '（你）' : ''} 胜
+            </Text>
             {footer}
             <View className="rr-actions">
               <View className="btn btn-primary rr-btn" onClick={onNext}>
